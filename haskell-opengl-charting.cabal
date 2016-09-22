@@ -24,7 +24,10 @@ library
                      , Drawable
                      , PriceAreaGraph
                      , VolumeBarGraph
---                      , Screen
+                     , Screen
+                     , Frame
+                     , VerticalCrosshair
+                     , HorizontalCrosshair
   build-depends:       base >= 4.7 && < 5
                      , vector
                      , tuple
