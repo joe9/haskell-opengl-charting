@@ -20,8 +20,10 @@ library
                      , Scale
                      , GLException
                      , GLFWHelpers
---                      , PriceAreaGraph
---                      , VolumeBarGraph
+                     , OpenGLHelpers
+                     , Drawable
+                     , PriceAreaGraph
+                     , VolumeBarGraph
 --                      , Screen
   build-depends:       base >= 4.7 && < 5
                      , vector
@@ -36,6 +38,7 @@ library
                      , bytestring
                      , colour
                      , gl
+                     , linear
   default-language:    Haskell2010
 
 -- executable baby-steps-to-building-a-realtime-chart-with-haskell-exe

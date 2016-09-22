@@ -10,34 +10,14 @@ import qualified Data.Vector.Unboxed as VU
 import "gl" Graphics.GL
 import Linear.V2
 --
-import OpenGLStuff
-import ScaleDataUnboxedVector
+import OpenGLHelpers
+import Scale
 import Types
+import Drawable
 
 -- TODO            map dot scaledVolumes)
-volumeGraph
-    :: Scale -> Scale -> VU.Vector PriceData -> Picture
-volumeGraph xScale yScale dataSeries =
-    Picture
-        ((VS.concatMap v2ToVertex .
-          VU.convert .
-          VU.concatMap
-              (\(V2 x y) ->
-                    VU.fromList
-                        [ V2 (x - barWidthHalved) (sMinRange yScale)
-                        , V2 (x - barWidthHalved) y
-                        , V2 (x + barWidthHalved) (sMinRange yScale)
-                        , V2 (x + barWidthHalved) y]) .
-          VU.imap (scaledVertex xScale yScale))
-             dataSeries)
-        GL_TRIANGLE_STRIP
-        lightgrey
-        Nothing
-  where
-    chartWidth = sMaxRange xScale - sMinRange xScale
-    barWidthHalved = (barWidth chartWidth (VU.length dataSeries)) / 2
-
-volumeBufferData :: Scale -> Scale -> VU.Vector PriceData -> VS.Vector Float
+volumeBufferData
+    :: Scale -> Scale -> VU.Vector PriceData -> VS.Vector Float
 volumeBufferData xScale yScale dataSeries =
     ((VS.concatMap v2ToVertex .
       VU.convert .

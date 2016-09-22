@@ -3,23 +3,18 @@
 module Drawable where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
-import Control.Concurrent
-import Control.Concurrent.Async
-import Data.Bits
-import Data.Colour.Names
+import Data.Colour
 import Data.IORef
-import Data.Time.Clock.POSIX
-import qualified Data.Vector.Storable as VS
 import qualified Data.Vector.Unboxed as VU
 import "gl" Graphics.GL
 import Graphics.UI.GLFW as GLFW
 import Prelude hiding (init)
-import System.Random
 import Data.Int
 --
 import Scale
 import Types
 import GLFWHelpers
+import OpenGLHelpers
 
 data Value
     = ValueCursorPosition Double
@@ -30,7 +25,7 @@ data Value
     | ValueAsOf Int64
     | ValueInteger Integer
     | ValueEmpty
-    deriving Eq
+    deriving (Eq)
 
 data DrawableType
     = Screen
@@ -39,7 +34,7 @@ data DrawableType
     | VolumeChart
     | HorizontalCrosshair
     | VerticalCrosshair
-    deriving Show
+    deriving (Show)
 
 data Drawable = Drawable
     { dPreviousValue :: Maybe Value

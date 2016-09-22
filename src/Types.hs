@@ -1,8 +1,10 @@
-
 module Types where
 
 import Data.Tuple.Select
 import Data.Int
+import qualified Data.Vector.Storable as VS
+import Linear.V2
+
 --
 type Height = Double
 
@@ -51,9 +53,9 @@ asof = sel4
 -- dot :: V2 Double -> Picture
 -- dot (V2 x y) =
 --   (color black . translate (realToFrac x) (realToFrac y) . circleSolid) 1
--- v2ToVertex
---     :: V2 Double -> VS.Vector Float
--- v2ToVertex (V2 x y) = VS.fromList [realToFrac x, realToFrac y]
+v2ToVertex
+    :: V2 Double -> VS.Vector Float
+v2ToVertex (V2 x y) = VS.fromList [realToFrac x, realToFrac y]
 
 rf :: Double -> Float
 rf = realToFrac

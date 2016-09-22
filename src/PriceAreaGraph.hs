@@ -8,11 +8,11 @@ import Data.Colour.Names
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Storable as VS
 import "gl" Graphics.GL
--- import           Linear.V2
 --
-import OpenGLStuff
-import ScaleDataUnboxedVector
-import TypesOpenGL
+import OpenGLHelpers
+import Scale
+import Drawable
+import Types
 
 priceChartDrawable :: VertexArrayId -> BufferId -> Drawable
 priceChartDrawable vaId bId =
