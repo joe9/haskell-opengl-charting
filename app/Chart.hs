@@ -12,7 +12,6 @@ import OpenGLHelpers
 import Scale
 import Types
 import Drawable
-import Chart
 import TestData
 
 -- import PriceGraphOpenGL
