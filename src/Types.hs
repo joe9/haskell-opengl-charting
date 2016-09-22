@@ -1,22 +1,11 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE TypeFamilies #-}
 
-module TypesOpenGL where
+module Types where
 
-import Data.Colour.SRGB
 import Data.Tuple.Select
 import qualified Data.Vector.Storable as VS
-import qualified Data.Vector.Unboxed as VU
 import Linear.V2
 import Data.Int
 --
-import GLFWStuff
-import OpenGLStuff
-import ScaleDataUnboxedVector
-
 type Height = Double
 
 type Width = Double
@@ -41,38 +30,6 @@ type PriceData = (Bid, Ask, Volume, AsOf)
 type X = Double
 
 type Y = Double
-
-data Value
-    = ValueCursorPosition Double
-                          Double
-    | ValueDimensions Width
-                      Height
-    | ValueInt Int
-    | ValueAsOf Int64
-    | ValueInteger Integer
-    | ValueEmpty
-    deriving Eq
-
-data DrawableType
-    = Screen
-    | Frame
-    | PriceChart
-    | VolumeChart
-    | HorizontalCrosshair
-    | VerticalCrosshair
-    deriving Show
-
-data Drawable = Drawable
-    { dPreviousValue :: Maybe Value
-    , dCurrentValue :: State -> VU.Vector PriceData -> Value
-    , dLoadBufferAndBuildDrawFunction :: State -> VU.Vector PriceData -> Scale -> Scale -> Scale -> Drawable -> IO (IO ())
-    , dDraw :: IO ()
-    , dVertexArrayId :: VertexArrayId
-    , dBufferId :: BufferId
-    , dColour :: Colour Double
-    , dTransparency :: Maybe Double
-    , dType :: DrawableType
-    }
 
 bid :: PriceData -> Bid
 bid = sel1

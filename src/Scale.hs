@@ -1,9 +1,4 @@
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE GADTs                     #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE TypeFamilies              #-}
-
-module ScaleDataUnboxedVector where
+module Scale where
 
 import qualified Data.Vector.Unboxed as VU
 

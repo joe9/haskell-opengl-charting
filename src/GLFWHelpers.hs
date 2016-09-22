@@ -1,13 +1,13 @@
 
-{-# LANGUAGE PackageImports            #-}
+{-# LANGUAGE PackageImports #-}
 
-module GLFWStuff where
+module GLFWHelpers where
 
 --------------------------------------------------------------------------------
 
 import Control.Concurrent.STM    (TQueue, atomically, newTQueueIO, tryReadTQueue, writeTQueue)
 import           Control.Exception.Safe
-import           "gl" Graphics.GL
+import "gl" Graphics.GL
 import Control.Monad             (unless, when, void)
 import Control.Monad.RWS.Strict  (RWST, asks, evalRWST, get, liftIO, modify, put)
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)

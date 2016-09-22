@@ -7,9 +7,5 @@ packages:
     commit: da2e3a4531bed0fe39a680b123c460dad0750da2
 - location: /home/j/dev/apps/haskell/chart/bindings-GLFW
   extra-dep: true
-extra-deps:
-- bindings-GLFW-3.2.1.0
-- gloss-1.10.2.3
-- gloss-raster-1.10.2.3
-- gloss-rendering-1.10.3.3
+extra-deps: []
 resolver: lts-6.18
