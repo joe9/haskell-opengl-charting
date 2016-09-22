@@ -1,10 +1,5 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeFamilies #-}
 
 module Main where
 
@@ -22,14 +17,13 @@ import Graphics.UI.GLFW as GLFW
 import Prelude hiding (init)
 import System.Random
 --
-import ChartOpenGL
-import PriceGraphOpenGL
-import VolumeGraphOpenGL
-import GLFWStuff
-import MyDataUnboxedVector
-import OpenGLStuff
-import ScaleDataUnboxedVector
-import TypesOpenGL
+import GLFWHelpers
+import OpenGLHelpers
+import Scale
+import Types
+import Drawable
+import Chart
+import TestData
 
 -- fonts can be added using freetype2 or FontyFruity. edwardk
 -- recommends using Valve approach of rendering it with a signed

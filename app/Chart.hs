@@ -1,16 +1,19 @@
 {-# LANGUAGE PackageImports #-}
 
-module ChartOpenGL where
+module Chart where
 
 import Data.Colour.Names
 import qualified Data.Vector.Storable as VS
 import qualified Data.Vector.Unboxed as VU
 import "gl" Graphics.GL
 --
-import GLFWStuff
-import OpenGLStuff
-import ScaleDataUnboxedVector
-import TypesOpenGL
+import GLFWHelpers
+import OpenGLHelpers
+import Scale
+import Types
+import Drawable
+import Chart
+import TestData
 
 -- import PriceGraphOpenGL
 -- import VolumeGraphOpenGL
