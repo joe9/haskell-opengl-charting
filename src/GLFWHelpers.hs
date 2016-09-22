@@ -18,7 +18,7 @@ import System.IO
 
 import qualified Graphics.UI.GLFW          as GLFW
 
-import OpenGLStuff hiding (rgb)
+import OpenGLHelpers hiding (rgb)
 import GLException
 
 --------------------------------------------------------------------------------

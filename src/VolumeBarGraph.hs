@@ -1,11 +1,6 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE PackageImports #-}
-{-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE TypeFamilies #-}
 
-module VolumeGraphOpenGL
+module VolumeBarGraph
   (volumeChartDrawable)
   where
 
@@ -17,7 +12,7 @@ import Linear.V2
 --
 import OpenGLStuff
 import ScaleDataUnboxedVector
-import TypesOpenGL
+import Types
 
 -- TODO            map dot scaledVolumes)
 volumeGraph

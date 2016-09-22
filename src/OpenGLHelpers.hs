@@ -1,12 +1,7 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-module OpenGLStuff where
+module OpenGLHelpers where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
 import Control.Concurrent

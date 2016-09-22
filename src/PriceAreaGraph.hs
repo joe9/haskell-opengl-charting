@@ -1,11 +1,6 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE PackageImports #-}
-{-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE TypeFamilies #-}
 
-module PriceGraphOpenGL
+module PriceAreaGraph
   (priceChartDrawable)
   where
 
