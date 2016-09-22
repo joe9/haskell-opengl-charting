@@ -1,105 +1,205 @@
-{-# OPTIONS_GHC -fno-warn-partial-type-signatures     #-}
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE GADTs                     #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE PartialTypeSignatures     #-}
-{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE PackageImports #-}
 
-module Chart where
+module ChartOpenGL where
 
-import Diagrams.Prelude hiding (dot, frame, set)
+import Data.Colour.Names
+import qualified Data.Vector.Storable as VS
+import qualified Data.Vector.Unboxed as VU
+import "gl" Graphics.GL
 --
-import Axis
-import PriceGraph
-import Scale
-import VolumeGraph
+import GLFWStuff
+import OpenGLStuff
+import ScaleDataUnboxedVector
+import TypesOpenGL
 
-type Bid = Double
+-- import PriceGraphOpenGL
+-- import VolumeGraphOpenGL
+minimumElement, maximumElement
+    :: (Ord a, VU.Unbox b)
+    => (b -> a) -> VU.Vector b -> a
+minimumElement f =
+    f .
+    VU.minimumBy
+        (\a b ->
+              compare (f a) (f b))
 
-type Ask = Double
+maximumElement f =
+    f .
+    VU.maximumBy
+        (\a b ->
+              compare (f a) (f b))
 
-type Volume = Double
-
-xScale, priceScale, volumeScale
-  :: [(Int,Bid,Ask,Volume)] -> LinearScale
+xScale, priceScale, volumeScale :: VU.Vector PriceData -> Scale
 xScale dataSeries =
-  LinearScale (map (\(i,_,_,_) -> fromIntegral i) dataSeries)
-              0
-              chartWidth
+    linearScale
+        0
+        (fromIntegral (VU.length dataSeries - 1))
+        (-1 + margin)
+        (1 - margin)
 
 priceScale dataSeries =
-  LinearScale (concatMap (\(_,b,a,_) -> [b,a]) dataSeries)
-              0
-              priceChartHeight
+    linearScale
+        (min (minimumElement bid dataSeries) (minimumElement ask dataSeries))
+        (max (maximumElement bid dataSeries) (maximumElement ask dataSeries))
+        (-1 + margin + volumeChartHeight 2)
+        (-1 + margin + volumeChartHeight 2 + priceChartHeight 2)
 
 volumeScale dataSeries =
-  LinearScale (map (\(_,_,_,v) -> v) dataSeries)
-              0
-              volumeChartHeight
+    linearScale
+        (minimumElement volume dataSeries)
+        (maximumElement volume dataSeries)
+        (-1 + margin)
+        (-1 + margin + volumeChartHeight 2)
 
--- Add a frame for the chart. The frame dimensions are the width and
---  height provided on the command line.
-frame :: _
-      => QDiagram b V2 Double Any
-frame = (showOrigin . lineWidth ultraThin . rect frameWidth) frameHeight
+drawFrameFunction
+    :: State
+    -> VU.Vector PriceData
+    -> Scale
+    -> Scale
+    -> Scale
+    -> Drawable
+    -> IO (IO ())
+drawFrameFunction _ _ _ _ _ d = do
+    let vertices =
+            VS.fromList [-0.99, -0.99, -0.99, 0.99, 0.99, 0.99, 0.99, -0.99]
+    loadBuffer (dBufferId d) vertices
+    putStrLn ("frame vertices are: " ++ show vertices)
+    return
+        (glDrawArrays
+             GL_LINE_LOOP
+             0
+             (div (fromIntegral (VS.length vertices)) 2))
 
-pChart
-  :: _
-  => [(Int,Bid,Ask,Volume)] -> QDiagram b V2 Double Any
-pChart dataSeries =
-  --   showEnvelope
-  (priceGraph (xScale dataSeries)
-              (priceScale dataSeries)
-              (map (\(i,b,_,_) -> (i,b)) dataSeries)
-              (map (\(i,_,a,_) -> (i,a)) dataSeries))
+-- Add a frame for the chart.
+frameDrawable
+    :: VertexArrayId -> BufferId -> Drawable
+frameDrawable vaId bId =
+    Drawable
+    { dDraw = return ()
+    , dLoadBufferAndBuildDrawFunction = drawFrameFunction
+    , dPreviousValue = Nothing
+    , dCurrentValue = (\s _ ->
+                            ValueCursorPosition
+                                (stateCursorX s)
+                                (stateCursorY s))
+    , dVertexArrayId = vaId
+    , dBufferId = bId
+    , dColour = green
+    , dTransparency = Nothing
+    , dType = Frame
+    }
 
-vChart
-  :: _
-  => [(Int,Bid,Ask,Volume)] -> QDiagram b V2 Double Any
-vChart dataSeries =
-  --   showEnvelope
-  (volumeGraph (xScale dataSeries)
-               (volumeScale dataSeries)
-               (map (\(i,_,_,v) -> (i,v)) dataSeries))
-
-chart
-  :: _
-  => [(Int,Bid,Ask,Volume)] -> QDiagram b V2 Double Any
-chart dataSeries =
-  position [(p2 (frameWidth / 2,frameHeight / 2),frame)
-           ,(p2 (margin,margin + volumeChartHeight),pChart dataSeries)
-           ,(p2 (margin,margin),vChart dataSeries)
-           ,(p2 (frameWidth / 2,margin),bottomAxis (xScale dataSeries))
-           ,(p2 (frameWidth / 2,margin + volumeChartHeight)
-            ,bottomAxis (xScale dataSeries))
-           ,(p2 (frameWidth / 2,frameHeight - margin)
-            ,topAxis (xScale dataSeries))
-           ,(p2 (margin,margin + volumeChartHeight + (priceChartHeight / 2))
-            ,leftAxis (priceScale dataSeries))
-           ,(p2 (margin,margin + (volumeChartHeight / 2))
-            ,leftAxis (volumeScale dataSeries))
-           ,(p2 (frameWidth - margin
-                ,margin + volumeChartHeight + (priceChartHeight / 2))
-            ,rightAxis (priceScale dataSeries))
-           ,(p2 (frameWidth - margin,margin + (volumeChartHeight / 2))
-            ,rightAxis (volumeScale dataSeries))]
-
+-- chart :: (Scale xscale
+--          ,Scale priceScale
+--          ,Scale volumeScale)
+--       => xscale
+--       -> priceScale
+--       -> volumeScale
+--       -> VU.Vector PriceData
+--       -> [Picture]
+-- chart x p v dataSeries =
+--   [ -- frame
+-- --    pChart x p dataSeries
+--    vChart x v dataSeries
+--   ,horizontalCrosshair 0.5
+--   ,verticalCrosshair 0.25]
 -- The size of the chart, in logical units. All the diagrams use the
 --  logical units. The translation from the actual units to the logical
 --  units is done by the renderer. 100 corresponds to 100%.
-margin, frameWidth, frameHeight :: Double
-frameWidth = 1000 + (2 * margin)
+margin
+    :: Double
+margin = 0.05
 
-frameHeight = 1000 + (2 * margin)
+chartWidth, chartHeight, priceChartHeight, volumeChartHeight :: Double -> Double
+chartWidth w = w - (2 * margin)
 
-margin = 20
+chartHeight h = h - (2 * margin)
 
-chartWidth, chartHeight, priceChartHeight, volumeChartHeight
-  :: Double
-chartWidth = 1000
+priceChartHeight = (* 0.8) . chartHeight
 
-chartHeight = 1000
+volumeChartHeight = (* 0.2) . chartHeight
 
-priceChartHeight = 800
+-- horizontalCrosshair :: Double -> Picture
+-- horizontalCrosshair y =
+--   Picture (VS.fromList [-1,realToFrac y,1,realToFrac y])
+--           GL_LINES
+--           green
+--           (Just 0.5)
+-- verticalCrosshair :: Double -> Picture
+-- verticalCrosshair x =
+--   Picture (VS.fromList [realToFrac x,-1,realToFrac x,1])
+--           GL_LINES
+--           green
+--           (Just 0.5)
+-- (0,0) for the cursor position is the top left corner
+buildHorizontalCrosshair
+    :: State
+    -> VU.Vector PriceData
+    -> Scale
+    -> Scale
+    -> Scale
+    -> Drawable
+    -> IO (IO ())
+buildHorizontalCrosshair state _ _ _ _ d
+  | 0 > stateCursorY state || 0 == stateWindowHeight state = return (return ())
+  | otherwise = do
+      let f = fromIntegral :: Int -> Double
+          ny = fromIntegral (stateWindowHeight state) - stateCursorY state
+          y = (2 * ny / f (stateWindowHeight state)) - 1
+          vertices = VS.fromList [-1, realToFrac y, 1, realToFrac y]
+      loadBuffer (dBufferId d) vertices
+      return
+          (glDrawArrays GL_LINES 0 (div (fromIntegral (VS.length vertices)) 2))
 
-volumeChartHeight = 200
+horizontalCrosshairDrawable :: VertexArrayId -> BufferId -> Drawable
+horizontalCrosshairDrawable vaId bId =
+    Drawable
+    { dDraw = return ()
+    , dLoadBufferAndBuildDrawFunction = buildHorizontalCrosshair
+    , dPreviousValue = Nothing
+    , dCurrentValue = (\s _ ->
+                            (ValueCursorPosition
+                                 (stateCursorX s)
+                                 (stateCursorY s)))
+    , dVertexArrayId = vaId
+    , dBufferId = bId
+    , dColour = green
+    , dTransparency = Just 0.5
+    , dType = HorizontalCrosshair
+    }
+
+buildVerticalCrosshair
+    :: State
+    -> VU.Vector PriceData
+    -> Scale
+    -> Scale
+    -> Scale
+    -> Drawable
+    -> IO (IO ())
+-- (0,0) for the cursor position is the top left corner
+buildVerticalCrosshair state _ _ _ _ d
+  | 0 > stateCursorX state || 0 == stateWindowWidth state = return (return ())
+  | otherwise = do
+      let f = fromIntegral :: Int -> Double
+          x = ((2 * stateCursorX state) / f (stateWindowWidth state)) - 1
+          vertices = VS.fromList [realToFrac x, -1, realToFrac x, 1]
+      loadBuffer (dBufferId d) vertices
+      return
+          (glDrawArrays GL_LINES 0 (div (fromIntegral (VS.length vertices)) 2))
+
+verticalCrosshairDrawable :: VertexArrayId -> BufferId -> Drawable
+verticalCrosshairDrawable vaId bId =
+    Drawable
+    { dDraw = return ()
+    , dLoadBufferAndBuildDrawFunction = buildVerticalCrosshair
+    , dPreviousValue = Nothing
+    , dCurrentValue = \s _ ->
+                           (ValueCursorPosition
+                                (stateCursorX s)
+                                (stateCursorY s))
+    , dVertexArrayId = vaId
+    , dBufferId = bId
+    , dColour = green
+    , dTransparency = Just 0.5
+    , dType = VerticalCrosshair
+    }
