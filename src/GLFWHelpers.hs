@@ -9,7 +9,6 @@ import Control.Concurrent.STM    (TQueue, atomically, newTQueueIO, tryReadTQueue
 import           Control.Exception.Safe
 import "gl" Graphics.GL
 import Control.Monad             (unless, when, void)
-import Control.Monad.RWS.Strict  (RWST, ask, asks, evalRWST, get, liftIO, modify, put)
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.List                 (intercalate)
 import Data.Maybe
@@ -39,8 +38,6 @@ data State = State
     , stateCursorX         :: !Double
     , stateCursorY         :: !Double
     } deriving Show
-
-type Demo = RWST Env () State IO
 
 --------------------------------------------------------------------------------
 
@@ -131,7 +128,8 @@ withInitializedWindow furtherInitialization renderer = do
               , stateCursorY         = -1
               }
         printInstructions
-        furtherInitialization (\a -> void (evalRWST (adjustWindow >> run renderer a) env state))
+        furtherInitialization
+          (\a -> (adjustWindow env state >>= \s -> run env s renderer a))
 
 --------------------------------------------------------------------------------
 
@@ -223,143 +221,146 @@ monitorCallback         tc mon c          = atomically $ writeTQueue tc $ EventM
 
 --------------------------------------------------------------------------------
 
-run :: (Env -> State -> a -> IO a) -> a -> Demo ()
-run drawFunction ds = do
+run :: Env -> State ->  (Env -> State -> a -> IO a) -> a -> IO ()
+run env state drawFunction ds = do
     -- number of seconds since GLFW started
 --     previousmt <- liftIO GLFW.getTime
 
     -- TODO bug: on empty event, should updated the chart with new data
-    liftIO GLFW.waitEvents
-    liftIO (putStr "Received GLFW event: ")
+    GLFW.waitEvents
+    putStr "Received GLFW event: "
 --     liftIO (GLFW.pollEvents)
-    processEvents
-    win <- asks envWindow
-    q <- liftIO (GLFW.windowShouldClose win)
+    ustate <- processEvents env state
+    q <- GLFW.windowShouldClose (envWindow env)
     unless q
-        (do state <- get
-            env <- ask
+        (do
             uuds <-
-                liftIO (do uds <- liftIO (drawFunction env state ds)
-                           return uds)
-            run drawFunction uuds
+                (do uds <- drawFunction env ustate ds
+                    return uds)
+            run env ustate drawFunction uuds
         )
 
-processEvents :: Demo ()
-processEvents = do
-    tc <- asks envEventsChan
-    me <- liftIO $ atomically $ tryReadTQueue tc
+processEvents :: Env -> State ->  IO State
+processEvents env state = do
+    me <- atomically $ tryReadTQueue (envEventsChan env)
     case me of
       Just e -> do
-          processEvent e
-          processEvents
-      Nothing -> return ()
+          ustate <- processEvent env state e
+          processEvents env ustate
+      Nothing -> return state
 
-processEvent :: Event -> Demo ()
-processEvent ev =
+processEvent :: Env -> State ->  Event -> IO State
+processEvent env state ev =
     case ev of
     -- this check on EventError is unneccessary. When an exception is thrown/raised,
       -- the caller should automatically destroy window (the caller
       -- should be using finally or bracket)
       (EventError e s) -> do
           printEvent "error" [show e, show s]
-          win <- asks envWindow
-          liftIO $ GLFW.setWindowShouldClose win True
+          GLFW.setWindowShouldClose (envWindow env) True
+          return state
 
       (EventWindowPos _ x y) ->
           printEvent "window pos" [show x, show y]
+           >> return state
 
       (EventWindowSize _ width height) ->
           printEvent "window size" [show width, show height]
+           >> return state
 
       (EventWindowClose _) ->
           printEvent "window close" []
+           >> return state
 
       (EventWindowRefresh _) ->
           printEvent "window refresh" []
+           >> return state
 
       (EventWindowFocus _ fs) ->
           printEvent "window focus" [show fs]
+           >> return state
 
       (EventWindowIconify _ is) ->
           printEvent "window iconify" [show is]
+           >> return state
 
       (EventFramebufferSize _ width height) -> do
           printEvent "framebuffer size" [show width, show height]
-          modify $ \s -> s
-            { stateWindowWidth  = width
-            , stateWindowHeight = height
-            }
-          adjustWindow
+          (adjustWindow env state { stateWindowWidth  = width
+                                         , stateWindowHeight = height
+                                         })
 
       (EventMouseButton _ mb mbs mk) -> do
           printEvent "mouse button" [show mb, show mbs, showModifierKeys mk]
-          when (mb == GLFW.MouseButton'1) $ do
+          if (mb == GLFW.MouseButton'1)
+            then
               let pressed = mbs == GLFW.MouseButtonState'Pressed
-              modify $ \s -> s
-                { stateMouseDown = pressed
-                }
-              unless pressed $
-                modify $ \s -> s
-                  { stateDragging = False
-                  }
+                  ustate = state { stateMouseDown = pressed}
+              in if (not pressed)
+                    then return (ustate { stateDragging = False})
+                    else return ustate
+            else return state
 
       (EventCursorPos _ x y) -> do
           let x' = round x :: Int
               y' = round y :: Int
           printEvent "cursor pos" [show x', show y']
-          state <- get
           if (stateMouseDown state && not (stateDragging state))
             then
-                put (state { stateDragging        = True
+                return (state { stateDragging        = True
                             , stateDragStartX      = x
                             , stateDragStartY      = y
                             , stateCursorX         = x
                             , stateCursorY         = y
                             })
             else
-                put (state { stateCursorX         = x
+                return (state { stateCursorX         = x
                            , stateCursorY         = y
                            })
 
       (EventCursorEnter _ cs) ->
           printEvent "cursor enter" [show cs]
+           >> return state
 
       (EventScroll _ x y) -> do
           let x' = round x :: Int
               y' = round y :: Int
           printEvent "scroll" [show x', show y']
-          adjustWindow
+          adjustWindow env state
 
       (EventKey win k scancode ks mk) -> do
           printEvent "key" [show k, show scancode, show ks, showModifierKeys mk]
           when (ks == GLFW.KeyState'Pressed) $ do
               -- Q, Esc: exit
               when (k == GLFW.Key'Q || k == GLFW.Key'Escape) $
-                liftIO $ GLFW.setWindowShouldClose win True
+                GLFW.setWindowShouldClose win True
               -- ?: print instructions
               when (k == GLFW.Key'Slash && GLFW.modifierKeysShift mk) $
-                liftIO printInstructions
+                printInstructions
               -- i: print GLFW information
               when (k == GLFW.Key'I) $
-                liftIO $ printInformation win
+                printInformation win
+          return state
 
       (EventChar _ c) ->
           printEvent "char" [show c]
+           >> return state
 
       (EventCharMods _ c _) ->
           printEvent "char mods" [show c]
+           >> return state
 
       (EventMonitor _ c) ->
           printEvent "monitor" [show c]
+           >> return state
 
-adjustWindow :: Demo ()
-adjustWindow = do
-    state <- get
+adjustWindow :: Env -> State ->  IO State
+adjustWindow _ state = do
     let width  = stateWindowWidth  state
         height = stateWindowHeight state
 
-    liftIO $ do
-        glViewport 0 0 (fromIntegral width) (fromIntegral height)
+    glViewport 0 0 (fromIntegral width) (fromIntegral height)
+    return state
 
 getCursorKeyDirections :: GLFW.Window -> IO (Double, Double)
 getCursorKeyDirections win = do
@@ -496,8 +497,8 @@ getMonitorInfos =
         name <- getMonitorName mon
         vms  <- getVideoModes mon
         MaybeT $ do
-            pos  <- liftIO $ GLFW.getMonitorPos mon
-            size <- liftIO $ GLFW.getMonitorPhysicalSize mon
+            pos  <- GLFW.getMonitorPos mon
+            size <- GLFW.getMonitorPhysicalSize mon
             return $ Just (name, pos, size, vms)
 
     getMonitorName :: GLFW.Monitor -> MaybeT IO String
@@ -516,9 +517,9 @@ getJoystickNames =
 
 --------------------------------------------------------------------------------
 
-printEvent :: String -> [String] -> Demo ()
+printEvent :: String -> [String] -> IO ()
 printEvent cbname fields =
-    liftIO $ putStrLn $ cbname ++ ": " ++ unwords fields
+    putStrLn (cbname ++ ": " ++ unwords fields)
 
 showModifierKeys :: GLFW.ModifierKeys -> String
 showModifierKeys mk =
