@@ -80,9 +80,6 @@ main = do
        (renderDrawables ref))
   cancel a
 
-onWindow :: ([Drawable] -> IO ()) -> IO ()
-onWindow f = initializeDrawables f
-
 -- http://stackoverflow.com/questions/5293898/how-to-pass-state-between-event-handlers-in-gtk2hs
 -- the below is not a working solution. Use MVar or TVar or IORef as
 -- recommended in the SO answer above
@@ -112,22 +109,3 @@ addAnother (series, xscale, pricescale, volumescale) = do
     , addToDomain volumescale v)
   where
     addToDomain s = (sAddToDomain s) s
-
--- could use the ContT monad. but, this is more readable
---  https://github.com/glguy/irc-core/blob/v2/src/Client/CApi.hs#L146-L158
-initializeDrawables :: ([Drawable] -> IO b) -> IO b
-initializeDrawables continueFunction =
-  withVertexArray $ \svaid svabid -> do
-    withVertexArray $ \fvaid fvabid -> do
-      withVertexArray $ \pvaid pvabid -> do
-        withVertexArray $ \vvaid vvabid -> do
-          withVertexArray $ \hcvaid hcvabid -> do
-            withVertexArray $ \vcvaid vcvabid -> do
-              continueFunction
-                [ screenDrawable svaid svabid
-                , frameDrawable fvaid fvabid
-                , priceChartDrawable pvaid pvabid
-                , volumeChartDrawable vvaid vvabid
-                , horizontalCrosshairDrawable hcvaid hcvabid
-                , verticalCrosshairDrawable vcvaid vcvabid
-                ]

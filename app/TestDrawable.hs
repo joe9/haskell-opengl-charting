@@ -10,22 +10,13 @@ module Main where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
 import Control.Concurrent
-import Control.Concurrent.Async
-import Data.Bits
-import Data.Colour.Names
-import Data.IORef
-import Data.Time.Clock.POSIX
 import qualified Data.Vector.Storable as VS
-import qualified Data.Vector.Unboxed as VU
 import "gl" Graphics.GL
 import Graphics.UI.GLFW as GLFW
 import Prelude hiding (init)
-import System.Random
 --
 import GLFWHelpers
 import OpenGLHelpers
-import Scale
-import Types
 import Drawable
 import Drawable.Screen
 import Drawable.Frame
@@ -57,7 +48,7 @@ debugRenderer
     -> State
     -> (VertexArrayId, BufferId, VertexArrayId, BufferId, VertexArrayId, BufferId)
     -> IO (VertexArrayId, BufferId, VertexArrayId, BufferId, VertexArrayId, BufferId)
-debugRenderer env state (fvaid,fbid,svaid,sbid,lvaid,lbid) = do
+debugRenderer env _ (fvaid,fbid,svaid,sbid,lvaid,lbid) = do
     let vertices =
             (VS.fromList
                  [ -1

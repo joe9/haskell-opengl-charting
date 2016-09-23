@@ -236,9 +236,8 @@ run = do
     liftIO $ do
         GLFW.swapBuffers win
         GL.flush  -- not necessary, but someone recommended it
---         GLFW.pollEvents
-        GLFW.waitEvents
-        liftIO (putStr "Received GLFW event: ")
+        GLFW.pollEvents
+--         GLFW.waitEvents
     processEvents
 
     state <- get

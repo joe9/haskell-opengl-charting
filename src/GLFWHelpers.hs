@@ -252,7 +252,6 @@ processEvents = do
       Just e -> do
           processEvent e
           processEvents
---       Nothing -> liftIO (putStrLn "no event in the queue") >> return ()
       Nothing -> return ()
 
 processEvent :: Event -> Demo ()
