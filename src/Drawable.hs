@@ -154,7 +154,9 @@ renderDrawable ref win colorUniformLocation state drawable = do
 --                                                           vcvaid
 --                                                           vcvabid]
 
+
 -- the above can be refactored to
+--   https://wiki.haskell.org/MonadCont_under_the_hood
 -- continuation takes a function and applies it within it's context
 -- Cont b a: takes a function (a -> b) and returns b. It has a in it's belly.
 -- ContT b m a: continuation transformer
