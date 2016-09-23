@@ -31,7 +31,7 @@ import Drawable.Screen
 import Drawable.Frame
 
 main :: IO ()
-main = putStrLn "TODO"
+main = withGLFW (withInitializedWindow debugUsingSingleBuffer debugRenderer)
 
 debugUsingSingleBuffer
     :: ((VertexArrayId, BufferId, VertexArrayId, BufferId, VertexArrayId, BufferId) -> IO a)
@@ -53,12 +53,11 @@ debugUsingSingleBuffer f =
                                   f (fvaid, fbid, svaid, sbid, vaId, bId)
 
 debugRenderer
-    :: Window
-    -> ColorUniformLocation
+    :: Env
     -> State
     -> (VertexArrayId, BufferId, VertexArrayId, BufferId, VertexArrayId, BufferId)
     -> IO (VertexArrayId, BufferId, VertexArrayId, BufferId, VertexArrayId, BufferId)
-debugRenderer win colorUniformLocation state (fvaid,fbid,svaid,sbid,lvaid,lbid) = do
+debugRenderer env state (fvaid,fbid,svaid,sbid,lvaid,lbid) = do
     let vertices =
             (VS.fromList
                  [ -1
@@ -79,6 +78,8 @@ debugRenderer win colorUniformLocation state (fvaid,fbid,svaid,sbid,lvaid,lbid) 
                  , -1
                  , 0
                  , -1])
+        win = envWindow env
+        colorUniformLocation = envColorUniformLocation env
     putStrLn ("Vertex Array Id: " ++ show svaid)
     justDrawThis
         win

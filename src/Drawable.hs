@@ -50,12 +50,13 @@ data Drawable = Drawable
 
 renderDrawables
     :: IORef (VU.Vector PriceData, Scale, Scale, Scale)
-    -> Window
-    -> ColorUniformLocation
+    -> Env
     -> State
     -> [Drawable]
     -> IO [Drawable]
-renderDrawables ref win colorUniformLocation state ds = do
+renderDrawables ref env state ds = do
+    let win = envWindow env
+        colorUniformLocation = envColorUniformLocation env
     putStrLn "renderDrawables called"
     (series,_,_,_) <- readIORef ref
     if (any
@@ -150,3 +151,10 @@ renderDrawable ref win colorUniformLocation state drawable = do
 --                                                     , verticalCrosshairDrawable
 --                                                           vcvaid
 --                                                           vcvabid]
+-- the above can be refactored to
+-- *Main > :t mapM withVertexArray [(\a -> return . screenDrawable a)]
+-- mapM withVertexArray [(\a -> return . screenDrawable a)]
+--   :: IO [Drawable]
+withInitializedDrawables :: [(VertexArrayId -> BufferId -> Drawable)] -> ([Drawable] -> IO b) ->  IO b
+withInitializedDrawables dfs continueFunction =
+  (mapM withVertexArray . map (\df -> (\a -> return . df a))) dfs >>= continueFunction

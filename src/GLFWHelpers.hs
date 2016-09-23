@@ -9,7 +9,7 @@ import Control.Concurrent.STM    (TQueue, atomically, newTQueueIO, tryReadTQueue
 import           Control.Exception.Safe
 import "gl" Graphics.GL
 import Control.Monad             (unless, when, void)
-import Control.Monad.RWS.Strict  (RWST, asks, evalRWST, get, liftIO, modify, put)
+import Control.Monad.RWS.Strict  (RWST, ask, asks, evalRWST, get, liftIO, modify, put)
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.List                 (intercalate)
 import Data.Maybe
@@ -88,46 +88,21 @@ withGLFW f =
                         f
                 else throw GLFWInitFailed)
 
-window :: ((a -> IO ()) -> IO ())
-       -> (GLFW.Window -> ColorUniformLocation -> State -> a -> IO a) -> IO ()
-window onWindow renderer = do
+withInitializedWindow :: ((a -> IO ()) -> IO ()) -> (Env -> State -> a -> IO a) -> IO ()
+withInitializedWindow furtherInitialization renderer = do
     let width  = 640
         height = 480
 
     eventsChan <- newTQueueIO :: IO (TQueue Event)
 
     withWindow width height "GLFW-b-demo" $ \win colorUniformLocation -> do
-        GLFW.setErrorCallback               $ Just $ errorCallback           eventsChan
-        GLFW.setWindowPosCallback       win $ Just $ windowPosCallback       eventsChan
-        GLFW.setWindowSizeCallback      win $ Just $ windowSizeCallback      eventsChan
-        GLFW.setWindowCloseCallback     win $ Just $ windowCloseCallback     eventsChan
-        GLFW.setWindowRefreshCallback   win $ Just $ windowRefreshCallback   eventsChan
-        GLFW.setWindowFocusCallback     win $ Just $ windowFocusCallback     eventsChan
-        GLFW.setWindowIconifyCallback   win $ Just $ windowIconifyCallback   eventsChan
-        GLFW.setFramebufferSizeCallback win $ Just $ framebufferSizeCallback eventsChan
-        GLFW.setMouseButtonCallback     win $ Just $ mouseButtonCallback     eventsChan
-        GLFW.setCursorPosCallback       win $ Just $ cursorPosCallback       eventsChan
-        GLFW.setCursorEnterCallback     win $ Just $ cursorEnterCallback     eventsChan
-        GLFW.setScrollCallback          win $ Just $ scrollCallback          eventsChan
-        GLFW.setKeyCallback             win $ Just $ keyCallback             eventsChan
-        GLFW.setCharCallback            win $ Just $ charCallback            eventsChan
---         GLFW.setCharModsCallback        win $ Just $ charModsCallback        eventsChan
---         GLFW.setDropCallback            win $ Just $ dropCallback            eventsChan
-        GLFW.setMonitorCallback             $ Just $ monitorCallback         eventsChan
+        setupCallbacks win eventsChan
 
         -- disable vsync (0 = off, 1 = on), 0 is the
         -- default value too
         -- http://www.glfw.org/docs/latest/quick.html#quick_swap_buffers
 --         GLFW.swapInterval 1
         GLFW.swapInterval 0
-
---         GL.position (GL.Light 0) GL.$= GL.Vertex4 5 5 10 0
---         GL.light    (GL.Light 0) GL.$= GL.Enabled
---         GL.lighting   GL.$= GL.Enabled
---         GL.cullFace   GL.$= Just GL.Back
---         GL.depthFunc  GL.$= Just GL.Less
---         GL.clearColor GL.$= GL.Color4 0.05 0.05 0.05 1
---         GL.normalize  GL.$= GL.Enabled
 
         (fbWidth, fbHeight) <- GLFW.getFramebufferSize win
         major <- GLFW.getWindowContextVersionMajor win
@@ -155,8 +130,8 @@ window onWindow renderer = do
               , stateCursorX         = -1
               , stateCursorY         = -1
               }
-        onWindow (runDemo renderer env state)
-        return ()
+        printInstructions
+        furtherInitialization (\a -> void (evalRWST (adjustWindow >> run renderer a) env state))
 
 --------------------------------------------------------------------------------
 
@@ -185,6 +160,25 @@ withWindow width height title f = do
 simpleErrorCallback :: (Show a, Show a1) => a -> a1 -> IO ()
 simpleErrorCallback e s = hPutStrLn stderr (unwords [show e, show s])
 
+setupCallbacks :: GLFW.Window -> TQueue Event -> IO ()
+setupCallbacks win eventsChan = do
+        GLFW.setErrorCallback               $ Just $ errorCallback           eventsChan
+        GLFW.setWindowPosCallback       win $ Just $ windowPosCallback       eventsChan
+        GLFW.setWindowSizeCallback      win $ Just $ windowSizeCallback      eventsChan
+        GLFW.setWindowCloseCallback     win $ Just $ windowCloseCallback     eventsChan
+        GLFW.setWindowRefreshCallback   win $ Just $ windowRefreshCallback   eventsChan
+        GLFW.setWindowFocusCallback     win $ Just $ windowFocusCallback     eventsChan
+        GLFW.setWindowIconifyCallback   win $ Just $ windowIconifyCallback   eventsChan
+        GLFW.setFramebufferSizeCallback win $ Just $ framebufferSizeCallback eventsChan
+        GLFW.setMouseButtonCallback     win $ Just $ mouseButtonCallback     eventsChan
+        GLFW.setCursorPosCallback       win $ Just $ cursorPosCallback       eventsChan
+        GLFW.setCursorEnterCallback     win $ Just $ cursorEnterCallback     eventsChan
+        GLFW.setScrollCallback          win $ Just $ scrollCallback          eventsChan
+        GLFW.setKeyCallback             win $ Just $ keyCallback             eventsChan
+        GLFW.setCharCallback            win $ Just $ charCallback            eventsChan
+--         GLFW.setCharModsCallback        win $ Just $ charModsCallback        eventsChan
+--         GLFW.setDropCallback            win $ Just $ dropCallback            eventsChan
+        GLFW.setMonitorCallback             $ Just $ monitorCallback         eventsChan
 --------------------------------------------------------------------------------
 
 -- Each callback does just one thing: write an appropriate Event to the events
@@ -229,12 +223,7 @@ monitorCallback         tc mon c          = atomically $ writeTQueue tc $ EventM
 
 --------------------------------------------------------------------------------
 
-runDemo :: (GLFW.Window -> ColorUniformLocation -> State -> a -> IO a) ->  Env -> State -> a -> IO ()
-runDemo f env state ds = do
-    printInstructions
-    void $ evalRWST (adjustWindow >> run f ds) env state
-
-run :: (GLFW.Window -> ColorUniformLocation -> State -> a -> IO a) -> a -> Demo ()
+run :: (Env -> State -> a -> IO a) -> a -> Demo ()
 run drawFunction ds = do
     -- number of seconds since GLFW started
 --     previousmt <- liftIO GLFW.getTime
@@ -248,9 +237,9 @@ run drawFunction ds = do
     q <- liftIO (GLFW.windowShouldClose win)
     unless q
         (do state <- get
-            colorUniformLocation <- asks envColorUniformLocation
+            env <- ask
             uuds <-
-                liftIO (do uds <- liftIO (drawFunction win colorUniformLocation state ds)
+                liftIO (do uds <- liftIO (drawFunction env state ds)
                            return uds)
             run drawFunction uuds
         )
