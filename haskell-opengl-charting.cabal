@@ -65,12 +65,12 @@ executable Chart
                , GLFWHelpers
                , OpenGLHelpers
                , Drawable
-               , PriceAreaGraph
-               , VolumeBarGraph
-               , Screen
-               , Frame
-               , VerticalCrosshair
-               , HorizontalCrosshair
+               , Drawable.PriceAreaGraph
+               , Drawable.VolumeBarGraph
+               , Drawable.Screen
+               , Drawable.Frame
+               , Drawable.VerticalCrosshair
+               , Drawable.HorizontalCrosshair
                , Chart
                , TestData
                , BulkVerticesData
@@ -116,12 +116,12 @@ executable TestDrawable
                , GLFWHelpers
                , OpenGLHelpers
                , Drawable
-               , PriceAreaGraph
-               , VolumeBarGraph
-               , Screen
-               , Frame
-               , VerticalCrosshair
-               , HorizontalCrosshair
+               , Drawable.PriceAreaGraph
+               , Drawable.VolumeBarGraph
+               , Drawable.Screen
+               , Drawable.Frame
+               , Drawable.VerticalCrosshair
+               , Drawable.HorizontalCrosshair
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -with-rtsopts=-B
   build-depends:       base
                      , haskell-opengl-charting

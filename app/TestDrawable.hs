@@ -27,8 +27,8 @@ import OpenGLHelpers
 import Scale
 import Types
 import Drawable
-import Screen
-import Frame
+import Drawable.Screen
+import Drawable.Frame
 
 main :: IO ()
 main = putStrLn "TODO"

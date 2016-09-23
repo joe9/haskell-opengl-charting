@@ -24,12 +24,12 @@ import Types
 import Drawable
 import Chart
 import TestData
-import Screen
-import Frame
-import PriceAreaGraph
-import VolumeBarGraph
-import HorizontalCrosshair
-import VerticalCrosshair
+import Drawable.Screen
+import Drawable.Frame
+import Drawable.PriceAreaGraph
+import Drawable.VolumeBarGraph
+import Drawable.HorizontalCrosshair
+import Drawable.VerticalCrosshair
 
 -- fonts can be added using freetype2 or FontyFruity. edwardk
 -- recommends using Valve approach of rendering it with a signed
