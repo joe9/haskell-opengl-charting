@@ -5,7 +5,7 @@ packages:
 - location:
     git: git@github.com:ekmett/quine.git
     commit: da2e3a4531bed0fe39a680b123c460dad0750da2
-- location: /home/j/dev/apps/haskell/chart/bindings-GLFW
+- location: /home/j/dev/apps/haskell/libraries/98-bindings-GLFW
   extra-dep: true
 extra-deps: []
 resolver: lts-6.18

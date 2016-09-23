@@ -1,6 +1,6 @@
 {-# LANGUAGE PackageImports #-}
 
-module Frame where
+module Drawable.Frame where
 
 import Data.Colour.Names
 import qualified Data.Vector.Storable as VS

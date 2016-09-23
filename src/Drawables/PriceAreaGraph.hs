@@ -1,6 +1,6 @@
 {-# LANGUAGE PackageImports #-}
 
-module PriceAreaGraph
+module Drawable.PriceAreaGraph
   (priceChartDrawable)
   where
 

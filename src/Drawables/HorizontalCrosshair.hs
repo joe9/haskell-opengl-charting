@@ -1,6 +1,6 @@
 {-# LANGUAGE PackageImports #-}
 
-module HorizontalCrosshair where
+module Drawable.HorizontalCrosshair where
 
 import Data.Colour.Names
 import qualified Data.Vector.Storable as VS

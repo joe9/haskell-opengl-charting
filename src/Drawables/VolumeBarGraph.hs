@@ -1,6 +1,6 @@
 {-# LANGUAGE PackageImports #-}
 
-module VolumeBarGraph
+module Drawable.VolumeBarGraph
   (volumeChartDrawable)
   where
 

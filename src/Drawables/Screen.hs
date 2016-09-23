@@ -1,6 +1,6 @@
 {-# LANGUAGE PackageImports #-}
 
-module Screen where
+module Drawable.Screen where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
 import Data.Bits
