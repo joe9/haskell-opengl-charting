@@ -95,7 +95,8 @@ run ref env state ds = do
     unless q
         (do
             uuds <-
-                (do uds <- renderDrawables ref env ustate ds
+                (do dataSeries <- readIORef ref
+                    uds <- renderDrawables env ustate ds dataSeries
                     return uds)
             run ref env ustate uuds)
 

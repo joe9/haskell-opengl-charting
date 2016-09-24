@@ -51,36 +51,35 @@ data Drawable = Drawable
     }
 
 renderDrawables
-    :: IORef (VU.Vector PriceData, Scale, Scale, Scale)
-    -> Env
+    :: Env
     -> State
     -> [Drawable]
+    -> (VU.Vector PriceData, Scale, Scale, Scale)
     -> IO [Drawable]
-renderDrawables ref env state ds = do
+renderDrawables env state ds dataSeries@(series,_,_,_) = do
     let win = envWindow env
         colorUniformLocation = envColorUniformLocation env
     putStrLn "renderDrawables called"
-    (series,_,_,_) <- readIORef ref
     if (any
             (\d ->
                   Just (dCurrentValue d state series) /= dPreviousValue d)
             ds)
         then do
             newds <-
-                mapM (renderDrawable ref win colorUniformLocation state) ds
+                mapM (\d -> renderDrawable win colorUniformLocation state d dataSeries) ds
             GLFW.swapBuffers win
             glFlush  -- not necessary, but someone recommended it
             return newds
         else return ds
 
 renderDrawable
-    :: IORef (VU.Vector PriceData, Scale, Scale, Scale)
-    -> Window
+    :: Window
     -> ColorUniformLocation
     -> State
     -> Drawable
+    -> (VU.Vector PriceData, Scale, Scale, Scale)
     -> IO Drawable
-renderDrawable ref win colorUniformLocation state drawable = do
+renderDrawable win colorUniformLocation state drawable (series,xscale,pricescale,volumescale) = do
     let justDraw =
             (\d -> do
                  drawUsingVertexArray
@@ -91,7 +90,6 @@ renderDrawable ref win colorUniformLocation state drawable = do
                      (dTransparency d)
                      (dDraw d)
                  return d)
-    (series,xscale,pricescale,volumescale) <- readIORef ref
     let newValue = dCurrentValue drawable state series
     if (Just newValue /= dPreviousValue drawable)
         then do
