@@ -85,8 +85,8 @@ withGLFW f =
                         f
                 else throw GLFWInitFailed)
 
-withInitializedWindow :: ((a -> IO ()) -> IO ()) -> (Env -> State -> a -> IO a) -> IO ()
-withInitializedWindow furtherInitialization renderer = do
+withInitializedWindow :: (Env -> State -> IO ()) -> IO ()
+withInitializedWindow continueFunction = do
     let width  = 640
         height = 480
 
@@ -128,8 +128,8 @@ withInitializedWindow furtherInitialization renderer = do
               , stateCursorY         = -1
               }
         printInstructions
-        furtherInitialization
-          (\a -> (adjustWindow env state >>= \s -> run env s renderer a))
+        ustate <- adjustWindow env state
+        continueFunction env ustate
 
 --------------------------------------------------------------------------------
 
@@ -220,34 +220,6 @@ charModsCallback        tc win c sc       = atomically $ writeTQueue tc $ EventC
 monitorCallback         tc mon c          = atomically $ writeTQueue tc $ EventMonitor         mon c
 
 --------------------------------------------------------------------------------
-
-run :: Env -> State ->  (Env -> State -> a -> IO a) -> a -> IO ()
-run env state drawFunction ds = do
-    -- number of seconds since GLFW started
---     previousmt <- liftIO GLFW.getTime
-
-    -- TODO bug: on empty event, should updated the chart with new data
-    GLFW.waitEvents
-    putStr "Received GLFW event: "
---     liftIO (GLFW.pollEvents)
-    ustate <- processEvents env state
-    q <- GLFW.windowShouldClose (envWindow env)
-    unless q
-        (do
-            uuds <-
-                (do uds <- drawFunction env ustate ds
-                    return uds)
-            run env ustate drawFunction uuds
-        )
-
-processEvents :: Env -> State ->  IO State
-processEvents env state = do
-    me <- atomically $ tryReadTQueue (envEventsChan env)
-    case me of
-      Just e -> do
-          ustate <- processEvent env state e
-          processEvents env ustate
-      Nothing -> return state
 
 processEvent :: Env -> State ->  Event -> IO State
 processEvent env state ev =

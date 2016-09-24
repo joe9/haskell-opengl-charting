@@ -4,8 +4,10 @@
 module Main where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
+import Control.Concurrent.STM    (TQueue, atomically, newTQueueIO, tryReadTQueue, writeTQueue)
 import           Control.Concurrent
 import           Control.Concurrent.Async
+import Control.Monad             (unless, when, void)
 import           Data.Bits
 import           Data.Colour.Names
 import           Data.IORef
@@ -69,16 +71,42 @@ main = do
   --         (withInitializedWindow initializeDrawables (renderDrawables ref))
   withGLFW
     (withInitializedWindow
-       (withInitializedDrawables
-          [ screenDrawable
-          , frameDrawable
-          , priceChartDrawable
-          , volumeChartDrawable
-          , horizontalCrosshairDrawable
-          , verticalCrosshairDrawable
-          ])
-       (renderDrawables ref))
+       (\e s -> withInitializedDrawables
+                    [ screenDrawable
+                    , frameDrawable
+                    , priceChartDrawable
+                    , volumeChartDrawable
+                    , horizontalCrosshairDrawable
+                    , verticalCrosshairDrawable
+                    ] (run ref e s)))
   cancel a
+
+run :: IORef (VU.Vector PriceData, Scale, Scale, Scale) -> Env -> State -> [Drawable] -> IO ()
+run ref env state ds = do
+    -- number of seconds since GLFW started
+--     previousmt <- liftIO GLFW.getTime
+
+    -- TODO bug: on empty event, should updated the chart with new data
+    GLFW.waitEvents
+    putStr "Received GLFW event: "
+--     liftIO (GLFW.pollEvents)
+    ustate <- processEvents env state
+    q <- GLFW.windowShouldClose (envWindow env)
+    unless q
+        (do
+            uuds <-
+                (do uds <- renderDrawables ref env ustate ds
+                    return uds)
+            run ref env ustate uuds)
+
+processEvents :: Env -> State ->  IO State
+processEvents env state = do
+    me <- atomically $ tryReadTQueue (envEventsChan env)
+    case me of
+      Just e -> do
+          ustate <- processEvent env state e
+          processEvents env ustate
+      Nothing -> return state
 
 -- http://stackoverflow.com/questions/5293898/how-to-pass-state-between-event-handlers-in-gtk2hs
 -- the below is not a working solution. Use MVar or TVar or IORef as

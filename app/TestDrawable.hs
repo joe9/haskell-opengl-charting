@@ -22,7 +22,7 @@ import Drawable.Screen
 import Drawable.Frame
 
 main :: IO ()
-main = withGLFW (withInitializedWindow debugUsingSingleBuffer debugRenderer)
+main = withGLFW (withInitializedWindow (\e s -> debugUsingSingleBuffer (debugRenderer e s)))
 
 debugUsingSingleBuffer
     :: ((VertexArrayId, BufferId, VertexArrayId, BufferId, VertexArrayId, BufferId) -> IO a)
@@ -47,8 +47,8 @@ debugRenderer
     :: Env
     -> State
     -> (VertexArrayId, BufferId, VertexArrayId, BufferId, VertexArrayId, BufferId)
-    -> IO (VertexArrayId, BufferId, VertexArrayId, BufferId, VertexArrayId, BufferId)
-debugRenderer env _ (fvaid,fbid,svaid,sbid,lvaid,lbid) = do
+    -> IO ()
+debugRenderer env state (fvaid,fbid,svaid,sbid,lvaid,lbid) = do
     let vertices =
             (VS.fromList
                  [ -1
@@ -120,4 +120,4 @@ debugRenderer env _ (fvaid,fbid,svaid,sbid,lvaid,lbid) = do
         win
     glFlush  -- not necessary, but someone recommended it
     threadDelay (2 * 1000 * 1000)
-    return (fvaid, fbid, svaid, sbid, lvaid, lbid)
+    debugRenderer env state (fvaid,fbid,svaid,sbid,lvaid,lbid)
