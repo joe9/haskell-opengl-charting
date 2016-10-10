@@ -9,7 +9,6 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include <assert.h>
-#include <pthread.h>
 #include <unistd.h>
 #include <GL/glew.h>
 #include <GLES2/gl2.h>

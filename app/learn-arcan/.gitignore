@@ -1,2 +1,3 @@
+*.o
 connect
-connect.o
+arcan-eglintro
