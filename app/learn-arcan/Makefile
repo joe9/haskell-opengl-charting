@@ -3,7 +3,7 @@ include config.mk
 .POSIX:
 .SUFFIXES: .c .o
 
-SRC = arcan-eglintro.c
+SRC = 1-arcan-eglintro.c 2-arcan-eglintro.c 3-arcan-eglintro.c
 SCRIPTS =
 
 OBJ = $(SRC:.c=.o)

@@ -1,3 +1,3 @@
 *.o
 connect
-arcan-eglintro
+*-arcan-eglintro
