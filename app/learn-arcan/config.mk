@@ -12,7 +12,7 @@ SBINDIR = ${PREFIX}/sbin
 CC = gcc
 LD = $(CC)
 CPPFLAGS =
-CFLAGS   = -Wextra -Wall -Wno-unused-result -O2 -I/home/j/dev/apps/durden-arcan/arcan/src -I/home/j/dev/apps/durden-arcan/arcan/src/shmif -I/usr/include/
+CFLAGS   = -Wextra -Wall -Wno-unused-result -O2 -I/home/j/dev/apps/durden-arcan/arcan/src -I/home/j/dev/apps/durden-arcan/arcan/src/ -I/usr/include/
 LDFLAGS  = -lm -lpthread -lGLEW -lGL -lGLU -larcan_shmif -larcan_shmif_ext -lGLESv2 -L/home/j/dev/apps/durden-arcan/arcan/build/shmif -L/usr/lib64/
 
 
