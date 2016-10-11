@@ -140,6 +140,14 @@ int main(int argc, char ** argv)
       printf("arcan_shmifext_eglsignal returned unexpected value: %i\n",eglsignalStatus);
    }
 
+   /* we can't pass textures accelerated, have to do it the slow way */
+   glBindTexture(GL_TEXTURE_2D, colorTextureName);
+   glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA,
+		 GL_UNSIGNED_BYTE, (void*) arcanShmifControl.vidp);
+   glBindTexture(GL_TEXTURE_2D, 0);
+
+   arcan_shmif_signal(&arcanShmifControl, SHMIF_SIGVID);
+
    /* assuming that this call should always work */
    glFlush();
    printf("headless graphics after glFlush\n");
