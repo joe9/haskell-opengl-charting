@@ -107,8 +107,8 @@ int main(int argc, char ** argv)
    glEnable(GL_TEXTURE_2D);
    glBindFramebuffer(GL_FRAMEBUFFER, framebufferName);
 
-   /* clear the color buffer */
-   glClearColor(1.0, 1.0, 0.0, 1.0);
+   /* clear the color buffer and paint it green */
+   glClearColor(0.0, 1.0, 0.0, 1.0);
    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
    glBindFramebuffer(GL_FRAMEBUFFER, 0);
    GLenum ErrorCheckValue = glGetError();
@@ -119,10 +119,6 @@ int main(int argc, char ** argv)
    }
 
    printf("headless graphics before sending eglsignal\n");
-   /* assuming that this call should always work */
-   /*    glFlush(); */
-
-   printf("headless graphics after glFlush\n");
    /*    need to render from the texture */
    int eglsignalStatus = 0;
    eglsignalStatus = arcan_shmifext_eglsignal(&arcanShmifControl,
@@ -131,17 +127,19 @@ int main(int argc, char ** argv)
    if (eglsignalStatus == -1){
       printf("arcan_shmifext_eglsignal returned failure %i\n",eglsignalStatus);
       return EXIT_FAILURE;
-   } else if (eglsignalStatus >= 0){
+   } else if (eglsignalStatus > 0){
       printf("arcan_shmifext_eglsignal took %i milliseconds\n",eglsignalStatus);
    } else {
       printf("arcan_shmifext_eglsignal returned unexpected value: %i\n",eglsignalStatus);
    }
 
+   /* assuming that this call should always work */
+   glFlush();
+   printf("headless graphics after glFlush\n");
+
    /*    eglSwapBuffers(display, surface); */
    printf("headless graphics sleeping\n");
 
-   sleep(60);
-   sleep(60);
    sleep(60);
 
    printf("headless graphics after sleeping\n");
