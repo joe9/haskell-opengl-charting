@@ -124,21 +124,23 @@ int main(int argc, char ** argv)
 
    printf("headless graphics after glFlush\n");
    /*    need to render from the texture */
-   if (arcan_shmifext_eglsignal(&arcanShmifControl,
-				0,
-				SHMIF_SIGVID, colorTextureName) >= 0){
-      printf("headless graphics sleeping\n");
-      return 0;
+   int eglsignalStatus = 0;
+   eglsignalStatus = arcan_shmifext_eglsignal(&arcanShmifControl,
+					      0,
+					      SHMIF_SIGVID, colorTextureName);
+   if (eglsignalStatus == -1){
+      printf("arcan_shmifext_eglsignal returned failure %i\n",eglsignalStatus);
+      return EXIT_FAILURE;
+   } else if (eglsignalStatus >= 0){
+      printf("arcan_shmifext_eglsignal took %i milliseconds\n",eglsignalStatus);
+   } else {
+      printf("arcan_shmifext_eglsignal returned unexpected value: %i\n",eglsignalStatus);
    }
 
    /*    eglSwapBuffers(display, surface); */
    printf("headless graphics sleeping\n");
 
-   int i =0;
-   while (i<1000){
-      i++;
-      sleep(60);
-   }
+   sleep(60);
    sleep(60);
    sleep(60);
 
