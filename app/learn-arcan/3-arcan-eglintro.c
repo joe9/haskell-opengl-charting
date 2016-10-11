@@ -117,8 +117,12 @@ int main(int argc, char ** argv)
       fprintf(stderr, "ERROR: Could not draw the triangles: %i \n", ErrorCheckValue);
       exit(-1);
    }
+   printf("headless graphics after setting up the framebuffer\n");
 
-   printf("headless graphics before sending eglsignal\n");
+   /* assuming that this call should always work */
+   glFlush();
+   printf("headless graphics after glFlush\n");
+
    /*    need to render from the texture */
    int eglsignalStatus = 0;
    uintptr_t display;
@@ -140,16 +144,13 @@ int main(int argc, char ** argv)
       printf("arcan_shmifext_eglsignal returned unexpected value: %i\n",eglsignalStatus);
    }
 
+   /*    read the texture image rendered back to the main cpu memory (where vidp points to) */
    glBindTexture(GL_TEXTURE_2D, colorTextureName);
    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA,
 		 GL_UNSIGNED_BYTE, (void*) arcanShmifControl.vidp);
    glBindTexture(GL_TEXTURE_2D, 0);
 
    arcan_shmif_signal(&arcanShmifControl, SHMIF_SIGVID);
-
-   /* assuming that this call should always work */
-   glFlush();
-   printf("headless graphics after glFlush\n");
 
    /*    eglSwapBuffers(display, surface); */
    printf("headless graphics sleeping\n");
