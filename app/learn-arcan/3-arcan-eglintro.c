@@ -148,6 +148,107 @@ void APIENTRY debugOutput(GLenum source,
    printf("\n");
 }
 
+#if VIDEOBACKEND == SDL
+void gpu_sync (struct arcan_shmif_cont *arcanShmifControlPtr, GLuint colorTextureName){
+   /*    need to render from the texture */
+
+   /* https://github.com/letoram/SDL2/blob/master/src/video/arcan/SDL_arcanopengl.c#L85 */
+   /* <letoram> problem is that all these interfaces are in flux */
+   /* <letoram> that the wayland etc. people are somewhat claiming that these things are 'ready to be default' is complete nonsense */
+   /* <letoram> they rely on a bunch of hacks they did in Mesa because they're also mesa devs, and the rest should just 'adopt' */
+   /* <letoram> and nvidia didn't want to have any of that, so now we have 2 competing solutions, none of them are complete - and the devs involved are starting to say "ok, we might need to agree on something" */
+   /* <letoram> so until whatever the real buffer passing solution should be, we're sortof stuck relying on things like this */
+   /* <letoram> signalhandle requires a descriptor, */
+   /* <letoram> there's a convenience function that does that job for you */
+   /* <letoram> ah sorry saw now that you figured that out (the eglsignal) */
+   /* <letoram> vidp is allocated on the resize call */
+   /* <letoram> and you need to flush before you signal */
+   /* <letoram> otherwise the data is just pending on the gpu somewhere */
+   /* <letoram> ah. another thing */
+   /* <letoram> eglsignal and signal are the same operation, one is if the data is being sent from the GPU (eglsignal or signalhandle) and the other if that fails (and for software- */
+   /*           only drawing using other tools than opengl) */
+   /* <letoram> so if you do eglsignal, arcan will grab that handle, map to a texture and draw.. */
+   /* <letoram> gl workflow: */
+   /* <letoram> init: setup EGL with whatever, build and bind FBO */
+   /* <letoram> connect/open arcan, arcan_shmif_resize to negotiate buffers */
+   /* <letoram> draw loop: queue your GL draw calls, glFlush(), then shmifext_eglsignal */
+   /* <letoram> that should be enough */
+   /* <letoram> eglsignal *can* fail but the failure is asynchronous, it fails if the display server determines that it can't use handle-passing anymore */
+   /* <letoram> if it's compositing on a different GPU, or the GPU has run out of buffers that can be mapped to a handle and so on - on multi-GPU this is extremely complicated */
+   /* <letoram> (and the reason for the GBM vs EGLStreams debate if you follow the politics going around) */
+   /* <letoram> if handle passing isn't working, then the fallback resort is the whole glReadPixels (or glGetTexImage2D, ...) into vidp and then signal */
+   /* <letoram> but that is a strong performance penalty (but better than nothing at all) */
+   /* read the texture image rendered back to the main cpu memory (where vidp points to) */
+   glBindTexture(GL_TEXTURE_2D, colorTextureName);
+   checkError();
+   /* vidp is allocated on the resize call */
+   glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA,
+		 GL_UNSIGNED_BYTE, (void*) arcanShmifControlPtr->vidp);
+   checkError();
+   glBindTexture(GL_TEXTURE_2D, 0);
+   checkError();
+   arcan_shmif_signal(arcanShmifControlPtr, SHMIF_SIGVID);
+}
+#else /* VIDEOBACKEND == SDL */
+void gpu_sync (struct arcan_shmif_cont *arcanShmifControlPtr, GLuint colorTextureName){
+   /*    need to render from the texture */
+   int eglsignalStatus = 0;
+   uintptr_t display;
+
+   /* https://github.com/letoram/SDL2/blob/master/src/video/arcan/SDL_arcanopengl.c#L85 */
+   /* <letoram> problem is that all these interfaces are in flux */
+   /* <letoram> that the wayland etc. people are somewhat claiming that these things are 'ready to be default' is complete nonsense */
+   /* <letoram> they rely on a bunch of hacks they did in Mesa because they're also mesa devs, and the rest should just 'adopt' */
+   /* <letoram> and nvidia didn't want to have any of that, so now we have 2 competing solutions, none of them are complete - and the devs involved are starting to say "ok, we might need to agree on something" */
+   /* <letoram> so until whatever the real buffer passing solution should be, we're sortof stuck relying on things like this */
+   /* <letoram> signalhandle requires a descriptor, */
+   /* <letoram> there's a convenience function that does that job for you */
+   /* <letoram> ah sorry saw now that you figured that out (the eglsignal) */
+   /* <letoram> vidp is allocated on the resize call */
+   /* <letoram> and you need to flush before you signal */
+   /* <letoram> otherwise the data is just pending on the gpu somewhere */
+   /* <letoram> ah. another thing */
+   /* <letoram> eglsignal and signal are the same operation, one is if the data is being sent from the GPU (eglsignal or signalhandle) and the other if that fails (and for software- */
+   /*           only drawing using other tools than opengl) */
+   /* <letoram> so if you do eglsignal, arcan will grab that handle, map to a texture and draw.. */
+   /* <letoram> gl workflow: */
+   /* <letoram> init: setup EGL with whatever, build and bind FBO */
+   /* <letoram> connect/open arcan, arcan_shmif_resize to negotiate buffers */
+   /* <letoram> draw loop: queue your GL draw calls, glFlush(), then shmifext_eglsignal */
+   /* <letoram> that should be enough */
+   /* <letoram> eglsignal *can* fail but the failure is asynchronous, it fails if the display server determines that it can't use handle-passing anymore */
+   /* <letoram> if it's compositing on a different GPU, or the GPU has run out of buffers that can be mapped to a handle and so on - on multi-GPU this is extremely complicated */
+   /* <letoram> (and the reason for the GBM vs EGLStreams debate if you follow the politics going around) */
+   /* <letoram> if handle passing isn't working, then the fallback resort is the whole glReadPixels (or glGetTexImage2D, ...) into vidp and then signal */
+   /* <letoram> but that is a strong performance penalty (but better than nothing at all) */
+   if (!arcan_shmifext_egl_meta(arcanShmifControlPtr, &display, NULL, NULL)) {
+      printf("arcan_shmifext_egl_meta returned false. Hence, exiting..\n");
+      exit(-1);
+   }
+   eglsignalStatus = arcan_shmifext_eglsignal(arcanShmifControlPtr,
+					      display,
+					      SHMIF_SIGVID, colorTextureName);
+   if (eglsignalStatus == -1){
+      printf("arcan_shmifext_eglsignal returned failure %i, Trying the slower way of copying the texture to the video memory (vidp) and then signal the gpu to render it\n",eglsignalStatus);
+      /* read the texture image rendered back to the main cpu memory (where vidp points to) */
+      glBindTexture(GL_TEXTURE_2D, colorTextureName);
+      checkError();
+      /* vidp is allocated on the resize call */
+      glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA,
+		    GL_UNSIGNED_BYTE, (void*) arcanShmifControlPtr->vidp);
+      checkError();
+      glBindTexture(GL_TEXTURE_2D, 0);
+      checkError();
+
+      arcan_shmif_signal(arcanShmifControlPtr, SHMIF_SIGVID);
+   } else if (eglsignalStatus > 0){
+      printf("arcan_shmifext_eglsignal took %i milliseconds\n",eglsignalStatus);
+   } else {
+      printf("arcan_shmifext_eglsignal returned unexpected value: %i\n",eglsignalStatus);
+   }
+}
+#endif /* VIDEOBACKEND == SDL */
+
 int main(int argc, char ** argv)
 {
    /*    got the below arcan template from arcan/src/platform/arcan/video.c */
@@ -158,10 +259,17 @@ int main(int argc, char ** argv)
       fprintf(stderr,"shmif open failed : couldn't connect to parent\n");
       return EXIT_FAILURE;
    }
-   printf("window dimensions: width %lu, height: %lu\n", (unsigned long)arcanShmifControl.w, (unsigned long)arcanShmifControl.h);
 
    /* setup requires shmif connection as we might get metadata that way */
    enum shmifext_setup_status status;
+   struct arcan_shmifext_setup setup = arcan_shmifext_headless_defaults();
+   setup.mask |= GL_CONTEXT_CORE_PROFILE_BIT;
+   /* OpenGL major version */
+   setup.major = 3;
+   /* OpenGL minor version */
+   setup.minor = 3;
+   setup.flags |= GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT;
+   setup.flags |= GL_CONTEXT_FLAG_DEBUG_BIT;
    if ((status = arcan_shmifext_headless_setup(&arcanShmifControl,
 					       arcan_shmifext_headless_defaults())) != SHMIFEXT_OK){
       printf("headless graphics setup failed, code: %d\n", status);
@@ -172,9 +280,12 @@ int main(int argc, char ** argv)
       return EXIT_FAILURE;
    }
 
-   /*    if (!arcan_shmif_resize(&arcanShmifControl, arcanShmifControl.w, arcanShmifControl.h)){ */
-   /*       arcan_shmif_drop(&arcanShmifControl); */
-   /*    } */
+   if (!arcan_shmif_resize(&arcanShmifControl, 320, 200)){
+      fprintf(stderr,"arcan_shmif_resize failed: file %s, line %i\n", __FILE__, __LINE__);
+      arcan_shmif_drop(&arcanShmifControl);
+   }
+   printf("window dimensions: width %lu, height: %lu\n", (unsigned long)arcanShmifControl.w, (unsigned long)arcanShmifControl.h);
+   printf("window dimensions: width %zu, height: %zu\n", arcanShmifControl.w, arcanShmifControl.h);
 
    GLint flags;
    glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
@@ -292,62 +403,7 @@ int main(int argc, char ** argv)
    checkError();
    printf("headless graphics after glFlush\n");
 
-   /*    need to render from the texture */
-   int eglsignalStatus = 0;
-   uintptr_t display;
-
-   /* https://github.com/letoram/SDL2/blob/master/src/video/arcan/SDL_arcanopengl.c#L85 */
-   /* <letoram> problem is that all these interfaces are in flux */
-   /* <letoram> that the wayland etc. people are somewhat claiming that these things are 'ready to be default' is complete nonsense */
-   /* <letoram> they rely on a bunch of hacks they did in Mesa because they're also mesa devs, and the rest should just 'adopt' */
-   /* <letoram> and nvidia didn't want to have any of that, so now we have 2 competing solutions, none of them are complete - and the devs involved are starting to say "ok, we might need to agree on something" */
-   /* <letoram> so until whatever the real buffer passing solution should be, we're sortof stuck relying on things like this */
-   /* <letoram> signalhandle requires a descriptor, */
-   /* <letoram> there's a convenience function that does that job for you */
-   /* <letoram> ah sorry saw now that you figured that out (the eglsignal) */
-   /* <letoram> vidp is allocated on the resize call */
-   /* <letoram> and you need to flush before you signal */
-   /* <letoram> otherwise the data is just pending on the gpu somewhere */
-   /* <letoram> ah. another thing */
-   /* <letoram> eglsignal and signal are the same operation, one is if the data is being sent from the GPU (eglsignal or signalhandle) and the other if that fails (and for software- */
-   /*           only drawing using other tools than opengl) */
-   /* <letoram> so if you do eglsignal, arcan will grab that handle, map to a texture and draw.. */
-   /* <letoram> gl workflow: */
-   /* <letoram> init: setup EGL with whatever, build and bind FBO */
-   /* <letoram> connect/open arcan, arcan_shmif_resize to negotiate buffers */
-   /* <letoram> draw loop: queue your GL draw calls, glFlush(), then shmifext_eglsignal */
-   /* <letoram> that should be enough */
-   /* <letoram> eglsignal *can* fail but the failure is asynchronous, it fails if the display server determines that it can't use handle-passing anymore */
-   /* <letoram> if it's compositing on a different GPU, or the GPU has run out of buffers that can be mapped to a handle and so on - on multi-GPU this is extremely complicated */
-   /* <letoram> (and the reason for the GBM vs EGLStreams debate if you follow the politics going around) */
-   /* <letoram> if handle passing isn't working, then the fallback resort is the whole glReadPixels (or glGetTexImage2D, ...) into vidp and then signal */
-   /* <letoram> but that is a strong performance penalty (but better than nothing at all) */
-   if (!arcan_shmifext_egl_meta(&arcanShmifControl, &display, NULL, NULL)) {
-      printf("arcan_shmifext_egl_meta returned false. Hence, exiting..\n");
-      return 0;
-   }
-   eglsignalStatus = arcan_shmifext_eglsignal(&arcanShmifControl,
-					      display,
-					      SHMIF_SIGVID, colorTextureName);
-   if (eglsignalStatus == -1){
-      printf("arcan_shmifext_eglsignal returned failure %i, Trying the slower way of copying the texture to the video memory (vidp) and then signal the gpu to render it\n",eglsignalStatus);
-      /* read the texture image rendered back to the main cpu memory (where vidp points to) */
-      glBindTexture(GL_TEXTURE_2D, colorTextureName);
-      checkError();
-      /* vidp is allocated on the resize call */
-      glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA,
-		    GL_UNSIGNED_BYTE, (void*) arcanShmifControl.vidp);
-      checkError();
-      glBindTexture(GL_TEXTURE_2D, 0);
-      checkError();
-
-      arcan_shmif_signal(&arcanShmifControl, SHMIF_SIGVID);
-   } else if (eglsignalStatus > 0){
-      printf("arcan_shmifext_eglsignal took %i milliseconds\n",eglsignalStatus);
-   } else {
-      printf("arcan_shmifext_eglsignal returned unexpected value: %i\n",eglsignalStatus);
-   }
-
+   gpu_sync(&arcanShmifControl,colorTextureName);
    /*    eglSwapBuffers(display, surface); */
    printf("headless graphics sleeping\n");
 
@@ -376,4 +432,3 @@ int main(int argc, char ** argv)
    checkError();
    return EXIT_SUCCESS;
 }
-

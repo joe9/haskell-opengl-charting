@@ -1,6 +1,9 @@
 # simplified init version
 VERSION = 0.0.1
 
+VIDEOBACKEND=SDL
+# VIDEOBACKEND=EGL-DRI
+
 # paths
 PREFIX  =
 MANDIR  = ${PREFIX}/usr/share/man
@@ -12,7 +15,16 @@ SBINDIR = ${PREFIX}/sbin
 CC = gcc
 LD = $(CC)
 CPPFLAGS =
-CFLAGS   = -g -Wextra -Wall -Wno-unused-result -O2 -I/home/j/dev/apps/durden-arcan/arcan/src -I/home/j/dev/apps/durden-arcan/arcan/src/ -I/usr/include/
-LDFLAGS  = -lm -lpthread -lGL -lEGL -larcan_shmif -larcan_shmif_ext -L/home/j/dev/apps/durden-arcan/arcan/build/shmif -L/usr/lib64/
+CFLAGS   = -D VIDEOBACKEND=$(VIDEOBACKEND) -g -Wextra -Wall -Wno-unused-result -O2 -I/home/j/dev/apps/durden-arcan/arcan/src -I/home/j/dev/apps/durden-arcan/arcan/src/ -I/usr/include/
+COMMONLDFLAGS  = -lm -lpthread -lGL -lEGL -larcan_shmif -larcan_shmif_ext -L/usr/lib64/
+
+SDLLIBFOLDER = -L/home/j/dev/apps/durden-arcan/arcan/build-sdl/shmif
+LIBFOLDER = -L/home/j/dev/apps/durden-arcan/arcan/build/shmif
+
+ifeq ($(VIDEOBACKEND), SDL)
+	LDFLAGS  = ${COMMONLDFLAGS} ${SDLLIBFOLDER}
+else
+	LDFLAGS  = ${COMMONLDFLAGS} ${LIBFOLDER}
+endif
 
 
