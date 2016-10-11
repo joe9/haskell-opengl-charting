@@ -357,12 +357,15 @@ int main(int argc, char ** argv)
    /*    is this good enough for freeing the above created resources */
    arcan_shmif_drop(&arcanShmifControl);
 
-   /* detach the texture */
-   glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0);
-   checkError();
-   glFramebufferRenderbuffer(GL_FRAMEBUFFER, 0, GL_RENDERBUFFER, 0);
-   checkError();
-   glBindRenderbuffer(GL_RENDERBUFFER, 0);
+   /* cleanup */
+   /* do not need the below as they will be deleted when I delete
+    * texture and framebuffer later */
+   /*    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0); */
+   /*    checkError(); */
+   /*    glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, 0); */
+   /*    checkError(); */
+
+   glDeleteTextures(1,&colorTextureName);
    checkError();
    glDeleteRenderbuffers(1, &depthRenderBufferName);
    checkError();
