@@ -1,3 +1,25 @@
+<joe9> letoram: one thing that is proving to be a pita is the switching back and forth between arcan and X. I could not get arcan working on X with the sdl backend. I think you
+       mentioned using sdl1.2. I could only find an sdl backend.  [12:27]
+<letoram> the sdl backend is sdl1.2
+<letoram> arcan "should" be able to run on a VT and switch like normal, but it doesn't
+<letoram> it's a bug I'm working on when I feel too happy :p  [12:28]
+<letoram> but the whole VT switching thing is such a legacy pile of bugs and hacks
+<joe9> Should the sdl backend version work on X? ./arcan -p /home/j/etc/arcan/appl /home/j/dev/apps/durden-arcan/durden/durden is my command. I get a big window spanning the
+       whole of the first monitor most of the second monitor. I could not open a terminal within that window.
+<letoram> which means you just send a kill SIGUSR1 to the server and you just messed up its internal state machine, had it sacrifice the exclusive lock on the GPU and now you
+          can grab it and steal its buffers then give everything back ..  [12:30]
+<joe9> when I run my app that tries to connect to durden/arcan from another X terminal, it cannot get a connection
+<letoram> ls
+<letoram> heh, wrong window there :)
+<letoram> try setting explicit dimensions, arcan -w 800 -h 400 or something
+<joe9> oh, cool. Thanks. good idea.
+<letoram> cruft is that SDL gets the dimension of the screen and no idea about the decorations  [12:31]
+<letoram> so fullscreen + decorations means not everything is showing :p
+<letoram> you have to explicitly set the connection path
+<letoram> just like DISPLAY=:0 in X
+<letoram> arcan uses ARCAN_CONNPATH=<appl-defined> usually durden for well, durden but that can be configured  [12:32]
+<joe9> letoram: cool. got the small durden window open. let me try with the CONNPATH. Thanks. That is such a relief.  [12:33]
+<letoram> that's how I develop on OSX :)
 <joe9> letoram: I get this error https://paste.pound-python.org/show/i67yOMXaLVOy2vMQpckr/ when I try to link with the sdl build version of the libraries  [12:39]
 <joe9> letoram: I presume that is because you did not need that function for the sdl backend
 <joe9> letoram: any recommendations on how I can fake that function when using the sdl backend
