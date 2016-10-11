@@ -1,0 +1,35 @@
+<joe9> letoram: I get this error https://paste.pound-python.org/show/i67yOMXaLVOy2vMQpckr/ when I try to link with the sdl build version of the libraries  [12:39]
+<joe9> letoram: I presume that is because you did not need that function for the sdl backend
+<joe9> letoram: any recommendations on how I can fake that function when using the sdl backend
+<letoram> ah that's the caveat I mentioned a while back -
+<letoram> handle passing does not exist when running in X  [12:40]
+<joe9> oh, ok.
+<joe9> just use the bare signal correct?
+<letoram> that's where the alternative "glReadPixels" or "glGetTexImage2D" hack into vidp- with bare signal works
+<joe9> ok, got it. Thanks.
+<letoram> but it's still a bug that those functions aren't stubbed  [12:46]
+<joe9> I prefer this instead of silently failing.  [12:48]
+<letoram> well, not being able to extract a handle is always a possible failure mode  [12:49]
+<letoram> say you are connected to a rendernode assigned to GPU2, arcan runs only using GPU1 and gets a handle, tries to map it, then the driver tries to negotiate so called
+          PRIME buffers which rely on a scarce resource, that resource isn't available - bam, no handle passing  [12:50]
+<letoram> unpredictable runtime failure
+<letoram> I think durden has help for testing that, target/video/advanced/disable buffer passing
+<letoram> then the display server explicitly says for this target that no, I won't accept GPU buffers from you
+<joe9> cool, got it working on X. That is such a relief.  [12:53]
+<joe9> How do you structure your build files (make, etc.) when building for osx and durden-only?  [12:54]
+<letoram> durden is completely disassociated from arcan build etc. wise,
+<letoram> for OSX it's just like with SDL on X,  [12:55]
+<letoram> i.e. cmake -DVIDEO_PLATFORM=sdl ../src and it figures out the rest
+<joe9> letoram: I am not talking about durde or arcan build
+<joe9> letoram:  I am talking about any client apps that you might be writing. such as what I am doing. a standalone app.
+<joe9> for example, I have different LDFLAGS for the different backends  [12:56]
+<letoram> I just let the shmif- dependency pull the rest in
+<letoram> but most "standalone" work for me is writing backends for other projects, so there's infrastructure to latch on to  [12:57]
+<letoram> arcan install should come with the normal pkgtool stuff
+<letoram> btw. if you want to test your external app without something as big as durden running,  [13:00]
+<joe9> ok, will just reuse the -DVIDEO_PLATFORM=sdl as preprocessor directive in my code
+<letoram> http://pastebin.com/fLrpgJfK  [13:04]
+<letoram> that's pretty much the minimum to recuringly accept a connection with the ARCAN_CONNPATH=demo  [13:05]
+<letoram> so save as demo.lua in a folder called demo, arcan /path/to/demo and it should work :)
+<joe9> cool, will try that. That is so cool. Thanks a lot.
+[letoram]
