@@ -121,8 +121,15 @@ int main(int argc, char ** argv)
    printf("headless graphics before sending eglsignal\n");
    /*    need to render from the texture */
    int eglsignalStatus = 0;
+   uintptr_t display;
+
+   /* https://github.com/letoram/SDL2/blob/master/src/video/arcan/SDL_arcanopengl.c#L85 */
+   if (!arcan_shmifext_egl_meta(&arcanShmifControl, &display, NULL, NULL)) {
+      printf("arcan_shmifext_egl_meta returned false. Hence, exiting..\n");
+      return 0;
+   }
    eglsignalStatus = arcan_shmifext_eglsignal(&arcanShmifControl,
-					      0,
+					      display,
 					      SHMIF_SIGVID, colorTextureName);
    if (eglsignalStatus == -1){
       printf("arcan_shmifext_eglsignal returned failure %i\n",eglsignalStatus);
