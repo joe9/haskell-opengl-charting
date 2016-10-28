@@ -263,21 +263,21 @@ int main(int argc, char ** argv)
    /* setup requires shmif connection as we might get metadata that way */
    enum shmifext_setup_status status;
    struct arcan_shmifext_setup setup = arcan_shmifext_headless_defaults();
-   setup.mask |= GL_CONTEXT_CORE_PROFILE_BIT;
    /* OpenGL major version */
    setup.major = 3;
    /* OpenGL minor version */
    setup.minor = 3;
+   setup.mask |= GL_CONTEXT_CORE_PROFILE_BIT;
    setup.flags |= GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT;
    setup.flags |= GL_CONTEXT_FLAG_DEBUG_BIT;
    if ((status = arcan_shmifext_headless_setup(&arcanShmifControl,
-					       arcan_shmifext_headless_defaults())) != SHMIFEXT_OK){
+					       setup)) != SHMIFEXT_OK){
       printf("headless graphics setup failed, code: %d\n", status);
-      fprintf(stderr,
-	      "EGL: Failed to create context: %s",
-	      getEGLErrorString(eglGetError()));
-      arcan_shmif_drop(&arcanShmifControl);
-      return EXIT_FAILURE;
+	 fprintf(stderr,
+		 "EGL: Failed to create context: %s",
+		 getEGLErrorString(eglGetError()));
+	 arcan_shmif_drop(&arcanShmifControl);
+	 return EXIT_FAILURE;
    }
 
    /* <letoram> I'm guessing that if you build b7166af1bedb49a55c13cad1b899bf3a50b01159 it works?  [22:02] */
@@ -290,34 +290,6 @@ int main(int argc, char ** argv)
    /*       arcan_shmif_drop(&arcanShmifControl); */
    /*    } */
    printf("window dimensions: width %lu, height: %lu\n", (unsigned long)arcanShmifControl.w, (unsigned long)arcanShmifControl.h);
-
-   /*    bool running = true; */
-   /*    arcan_event event; */
-   /*    size_t width = 0, height = 0; */
-   /*    while (arcan_shmif_wait(&arcanShmifControl, &event) == 1){ */
-   /*       printf("wait returned\n"); */
-   /*       if (event.category == EVENT_TARGET) */
-   /*	 switch (event.tgt.kind){ */
-   /*	    case TARGET_COMMAND_EXIT: */
-   /*	       running = false; */
-   /*	       break; */
-   /*	    case TARGET_COMMAND_DISPLAYHINT: */
-   /*	       printf("received TARGET_COMMAND_DISPLAYHINT\n"); */
-   /*	       width = (size_t)event.tgt.ioevs[0].iv; */
-   /*	       height = (size_t)event.tgt.ioevs[1].iv; */
-   /*	       if (!arcan_shmif_resize(&arcanShmifControl, width, height)){ */
-   /*		  fprintf(stderr,"arcan_shmif_resize failed: file %s, line %i\n", __FILE__, __LINE__); */
-   /*		  running=false; */
-   /*		  arcan_shmif_drop(&arcanShmifControl); */
-   /*	       } */
-   /*	       printf("window dimensions: width %lu, height: %lu\n", (unsigned long)arcanShmifControl.w, (unsigned long)arcanShmifControl.h); */
-   /*	       break; */
-   /*	    default: */
-   /*	       break; */
-   /*	 } */
-   /*       if (0 < width) {break;} */
-   /*    } */
-   /*    if (running == false) {return EXIT_FAILURE;}; */
 
    GLint flags;
    glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
@@ -438,6 +410,37 @@ int main(int argc, char ** argv)
    gpu_sync(&arcanShmifControl,colorTextureName);
    /*    eglSwapBuffers(display, surface); */
    printf("headless graphics sleeping\n");
+
+   /*    https://github.com/letoram/arcan/blob/master/src/shmif/tui/tui.c#L1061 */
+   /*    also check out tests/frameservers/iodump/iodump.c */
+   bool running = true;
+   arcan_event event;
+   size_t width = 0, height = 0;
+   /*    while (arcan_shmif_wait(&arcanShmifControl, &event) == 1){ */
+   while (arcan_shmif_wait(&arcanShmifControl, &event)){
+      printf("wait returned\n");
+      if (event.category == EVENT_TARGET)
+	 switch (event.tgt.kind){
+	    case TARGET_COMMAND_EXIT:
+	       running = false;
+	       break;
+	    case TARGET_COMMAND_DISPLAYHINT:
+	       printf("received TARGET_COMMAND_DISPLAYHINT\n");
+	       printf("received width: %lu, height: %lu\n", event.tgt.ioevs[0].iv, event.tgt.ioevs[1].iv);
+	       if (event.tgt.ioevs[0].iv && event.tgt.ioevs[1].iv) {
+		  width = (size_t)event.tgt.ioevs[0].iv;
+		  height = (size_t)event.tgt.ioevs[1].iv;
+		  printf("new window dimensions: width %lu, height: %lu\n", width, height);
+	       }
+	       printf("window dimensions: width %lu, height: %lu\n", (unsigned long)arcanShmifControl.w, (unsigned long)arcanShmifControl.h);
+	       break;
+	    default:
+	       break;
+	 }
+      /*       if (0 < width) {break;} */
+   }
+   if (running == false) {return EXIT_FAILURE;};
+   printf("after wait\n");
 
    sleep(10);
 

@@ -263,15 +263,15 @@ int main(int argc, char ** argv)
    /* setup requires shmif connection as we might get metadata that way */
    enum shmifext_setup_status status;
    struct arcan_shmifext_setup setup = arcan_shmifext_headless_defaults();
-   setup.mask |= GL_CONTEXT_CORE_PROFILE_BIT;
    /* OpenGL major version */
    setup.major = 3;
    /* OpenGL minor version */
    setup.minor = 3;
+   setup.mask |= GL_CONTEXT_CORE_PROFILE_BIT;
    setup.flags |= GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT;
    setup.flags |= GL_CONTEXT_FLAG_DEBUG_BIT;
    if ((status = arcan_shmifext_headless_setup(&arcanShmifControl,
-					       arcan_shmifext_headless_defaults())) != SHMIFEXT_OK){
+					       setup)) != SHMIFEXT_OK){
       printf("headless graphics setup failed, code: %d\n", status);
       fprintf(stderr,
 	      "EGL: Failed to create context: %s",
