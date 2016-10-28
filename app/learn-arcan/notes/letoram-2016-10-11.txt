@@ -1,0 +1,213 @@
+
+[Tue Oct 11 2016]
+<joe9> I know you do not like these kind of questions, but I just want to get your
+       opinion on this.  [09:44]
+<joe9> Regarding the architecture, everyone talks about "Plan9 approach of services as
+       files" as being good.  [09:45]
+<joe9> I am wondering if there was any particular reason you weant with using a socket
+       server instead of that approach.
+<letoram> it scales horribly and you can't work around ordering  [09:46]
+<letoram> I can do a full event-queue flush and A/V synch without a single syscall
+<letoram> this allows for tricks like merging storms of events (say you connect a
+          mouse that suddenly throws 2k events/second)
+<joe9> oh, ok. Thanks. I keep thinking that there must be a reason why so many apps
+       are not using that approach. I think I have my answer now.
+<letoram> and the worst case, "drag-resize"  [09:47]
+<letoram> resize-negotiation is, by far, the most complicated thing around -- the
+          patterns change with window management style and you end up with a lot of
+          discarded full realloc+draw+sync calls that never make it to the screen
+                                                                                [09:48]
+<letoram> at 4k resolutions on a battery, that's a quick way of draining it
+<letoram> so whenever I get a "DISPLAYHINT" event, I internally sweep the entire queue
+          looking for ones that would override it  [09:49]
+<letoram> and if there is one, I only forward the last to the client
+<letoram> thinks like that can't be done with events queued on a file handle
+<joe9> letoram: What hardware is targeted by Durden? Desktops or embedded hardware
+       (such as Raspberry Pi, etc)?  [09:50]
+<joe9> I want to use it for a desktop.  [09:51]
+<joe9> letoram: I like the objective of removing all the cruft and keeping things
+       simple.
+<joe9> letoram: But, if the goal of durden is for embedded apps, then, maybe it might
+       not be optimal for a desktop (?)  [09:52]
+<letoram> durden is what I'm using for a desktop, it's way too complicated for
+          anything else
+<letoram> you have to do things for multiple displays etc. that murders bandwidth on
+          something like a pi
+<letoram> that's why I just now started the mini-project 'pRio' (recreating plan-9 rio
+          desktop model with slightly less ugly graphics), both for a short writeup
+          and demo on how much it takes to get something going   [09:53]
+<joe9> letoram: ok. Thanks. glad to know that you are doing it with a desktop.  [09:54]
+<letoram> for "my own needs", I needed 3 DEs: durden for desktop, then 'yet to be
+          determined' for smart phones and a third 'codename:safespace' for VR  [09:55]
+<joe9> I did this https://paste.pound-python.org/show/5bwWhqTRahxCF9Wfiwds/ to set the
+       flags and mask of the requested OpenGL context to file
+       b/src/shmif/egl-dri-rnode/egl-dri-rnode.c  [09:58]
+<joe9> It would be nice if you could expose the flags / mask  [09:59]
+<joe9> https://paste.pound-python.org/show/WoOCjAlfaoIIpNiw0doK/ this is how glfw does
+       the egl context creation.  [10:00]
+<letoram> well I can add mask/flags to the shmifext_setup struct  [10:02]
+<joe9> ok, Thanks. I noticed that by default arcan was using the 2 (I think) OpenGL
+       context version. My card is capabale of OpenGL 3.3.  [10:03]
+<joe9> I presume that every user would have a different version of OpenGL  [10:04]
+<letoram> everything arcan-internal is strict 2.1
+<joe9> that their cards are capable.
+<letoram> it's the last version where you could hope for driver stability / "almost"
+          compatiblity with GLES2 etc.
+<letoram> only thing I'd "want" from later versions is buffer pinning for faster
+          streaming uploads and compute shaders
+<letoram> but maintaining more backends would be too much pain -- so my strategy is to
+          keep the engine internal- to GL21/GLES2, write a Vulkan backend and (if time
+          permits one day) a software one  [10:05]
+<joe9> letoram: "arcan-internal is strict 2.1" I read that there is a big difference
+       between the <3 and >3 version (compatible vs core)
+<letoram> they are extremely different  [10:07]
+<joe9> It is probably not noticeable by the user, correct? I could as well use OpenGL
+       3.3 for a one-off app, and it should not matter to the "arcan-internal engine",
+       correct?  [10:11]
+<letoram> no it should not
+<joe9> ok, Thanks.  [10:12]
+<letoram> any other quirks you've experienced with durden?  [10:22]
+<joe9> I was wondering about why you took the effort to create the global menu and
+       local menu, instead of something simpler (such as a dmenu, etc). But, I do not
+       know if dmenu is really simpler or not.  [10:25]
+<letoram> it started out as "I just need an input dialog" that grew out of hand, and
+          it quickly turned into the feature I use the most :p  [10:26]
+<letoram> and using an external "menu bar" would need me to expose the system/window
+          namespace to an external process
+<letoram> and then reinventing the main problem with the entire X window management
+          model  [10:27]
+<letoram> with the WM as a client as normal, you practically double the latency it
+          takes to make any DE decision
+<letoram> and add asynchronous races
+<letoram> the menus/* format that is used with the global/target menu is in such a way
+          that it ties together a hierarchical key/value name-space with dynamic
+          validation and evaluation of every entry  [10:29]
+<letoram> and has pretty much evolved into the backbone for everything in durden -
+          keybindings, menus, timers, ipc, icons ... maps into this thing :)
+<joe9> letoram: https://paste.pound-python.org/show/5vgiRFtMzCBrdoMVypCe/ I do not
+       need this call, correct? the created window already has the width == w and
+       height == h, correct?  [10:48]
+<letoram> yeah, that op doesn't do much  [10:52]
+<joe9> letoram: Thanks.  [10:54]
+<joe9> letoram: as an fyi, this is what I did to egl-dri-rnode.c
+       https://gist.github.com/ead02e82901293f1e236c96b0ae09aa0  [11:39]
+<joe9> ignore the changes to shmif_ext_hidden_int (a formatting change by the editor)
+
+[Tue Oct 11 2016]
+<joe9> not sure if this is a bug or expected behaviour  [11:54]
+<joe9> output https://gist.github.com/634d66f55ee598fd2dcbb799b6908687
+<letoram>
+          https://github.com/letoram/arcan/commit/81d556472286c637b11d706949d400f9245562b5
+          was the change I did in a different branch for mask/flags  [11:55]
+<joe9> source
+       https://github.com/joe9/haskell-opengl-charting/blob/master/app/learn-arcan/3-arcan-eglintro.c#L44
+                                                                                [11:56]
+<joe9> it appears that the shmif_open is not setting the w and h dimensions.
+<letoram> shmif_open is not supposed to set w and h
+<letoram> you are supposed to specify what you want with the first resize
+<joe9> this line
+       https://github.com/joe9/haskell-opengl-charting/blob/master/app/learn-arcan/3-arcan-eglintro.c#L155
+                                                                                [11:57]
+<joe9> letoram: oh, ok. How do I know what the dimensions of the opened window are?
+       from the event loop?
+<letoram> this is what's complicated,  [11:58]
+<letoram> depending on how the connection is setup, what the display management model
+          is, what other thing has happened, the dimensions may not be known at the
+          time the connection is established
+<letoram> take a VM or a video-player, they have source that dictates desired dimensions  [11:59]
+<letoram> while for a game, it "depends"
+<joe9> Normally, I think when the window is finally displayed, a resize event is sent. Or, some such event that gets fired on initial display after the dimensions are known.
+                                                                                                                                                                           [12:00]
+<joe9> I can do the rendering after that event is received.
+<letoram> since events are delivered asynchronously,
+<letoram> the actual time a connection is setup is unknown in the window manager  [12:01]
+<letoram> there are 3 modes I have to consider:  [12:03]
+<letoram> 1. display server initiates the connection with something where there is a source defined dimension  [12:05]
+<letoram> 2. display server initiates the connection with something where the display server defines dimensions
+<letoram> 3. an external connection that is "deferred"
+<letoram> to try and get all these on the same codepath,
+<letoram> (ok a fouth one as well for subwindows with different rules, like a popup...)  [12:06]
+<joe9> with normal windows in a tiling manager, it is 2, correct?
+<letoram> the _open() MAY set w, h but that is not always possible
+<letoram> X doesn't really have 1/2  [12:07]
+<letoram> everything is an external connection to a display socket
+<letoram> and then a ton of negotiation messages that gets overridden by the window manager and everyone gets sad
+<letoram> to combat this there are two events that the script can use:  [12:08]
+<joe9> with wayland, I think you tell your preferences and the compositor does what is best.
+<letoram> TARGET_DISPLAYHINT and TARGET_OUTPUTHINT
+<letoram> with wayland, the compositor doesn't have that much control, the client actually allocates the buffers in both shm and accelerated cases (which gives them a set of
+          other problems)  [12:09]
+<letoram> DISPLAYHINT "these are the properties that you will be displayed as, no matter if you like it or not"  [12:10]
+<letoram> it covers density, pixel dimensions and possibly led orientation
+<letoram> OUTPUTHINT "these are the assumed capabilities of the display" (not really used yet but turns out SDL2 games break if I fake this information"  [12:11]
+<letoram> so it is possible to just wait for a DISPLAYHINT event and use that as indication that you will actually be displayed, and use that for your resize call  [12:12]
+<joe9> ok, Thanks. let me figure out how to do the event loop and the DISPLAYHINT event.  [12:16]
+<letoram> I understand this is a bit cumbersome now, this layer wasn't really planned to be exposed outside my deranged mind but rather hidden in a real abstraction :p  [12:17]
+<joe9> letoram: no, I am glad someone took the time and effort to do this. It takes a lot of guts to take up such a big project.  [12:23]
+<joe9> letoram: I just need some time to understand how it is and why it is the way it is.
+<joe9> letoram: with the current approach, do you think the Window manager code is mixed up. Is durden still modular? Can it be replaced something else without the guts of arcan
+       being ripped out?  [12:25]
+<joe9> letoram: one thing that is proving to be a pita is the switching back and forth between arcan and X. I could not get arcan working on X with the sdl backend. I think you
+       mentioned using sdl1.2. I could only find an sdl backend.  [12:27]
+<letoram> the sdl backend is sdl1.2
+<letoram> arcan "should" be able to run on a VT and switch like normal, but it doesn't
+<letoram> it's a bug I'm working on when I feel too happy :p  [12:28]
+<letoram> but the whole VT switching thing is such a legacy pile of bugs and hacks
+<letoram> 1. sacrifice two signal slots (so there goes USR1 and USR2), on one signal, quickly release all resources and do an ioctl on the tty -- if this takes "too long" (which
+          you can't really know) the kernel does nothing  [12:29]
+<letoram> 2. wait for the next signal and try to regrab
+<joe9> Should the sdl backend version work on X? ./arcan -p /home/j/etc/arcan/appl /home/j/dev/apps/durden-arcan/durden/durden is my command. I get a big window spanning the
+       whole of the first monitor most of the second monitor. I could not open a terminal within that window.
+<letoram> which means you just send a kill SIGUSR1 to the server and you just messed up its internal state machine, had it sacrifice the exclusive lock on the GPU and now you
+          can grab it and steal its buffers then give everything back ..  [12:30]
+<joe9> when I run my app that tries to connect to durden/arcan from another X terminal, it cannot get a connection
+<letoram> ls
+<letoram> heh, wrong window there :)
+<letoram> try setting explicit dimensions, arcan -w 800 -h 400 or something
+<joe9> oh, cool. Thanks. good idea.
+<letoram> cruft is that SDL gets the dimension of the screen and no idea about the decorations  [12:31]
+<letoram> so fullscreen + decorations means not everything is showing :p
+<letoram> you have to explicitly set the connection path
+<letoram> just like DISPLAY=:0 in X
+<letoram> arcan uses ARCAN_CONNPATH=<appl-defined> usually durden for well, durden but that can be configured  [12:32]
+<joe9> letoram: cool. got the small durden window open. let me try with the CONNPATH. Thanks. That is such a relief.  [12:33]
+<letoram> that's how I develop on OSX :)
+<letoram> on durden and modularity, it's 100% lua scripts, want to extend something? look at durden/tools/*  [12:35]
+<letoram> it's the 4th (I think) window manager I wrote for arcan (then there's a few computer-vision apps, the visual reverse engineering tool senseye)
+<letoram> you saw the old experimental one? :) https://www.youtube.com/watch?v=3O40cPUqLbU   [12:36]
+<letoram> https://github.com/letoram/prio is the simpler one I'm writing for raspberry pi- like hardware  [12:37]
+<joe9> letoram: I get this error https://paste.pound-python.org/show/i67yOMXaLVOy2vMQpckr/ when I try to link with the sdl build version of the libraries  [12:39]
+<joe9> letoram: I presume that is because you did not need that function for the sdl backend
+<joe9> letoram: any recommendations on how I can fake that function when using the sdl backend
+<letoram> ah that's the caveat I mentioned a while back -
+<letoram> handle passing does not exist when running in X  [12:40]
+<joe9> oh, ok.
+<joe9> just use the bare signal correct?
+<letoram> that's where the alternative "glReadPixels" or "glGetTexImage2D" hack into vidp- with bare signal works
+<joe9> ok, got it. Thanks.
+<letoram> but it's still a bug that those functions aren't stubbed  [12:46]
+<joe9> I prefer this instead of silently failing.  [12:48]
+<letoram> well, not being able to extract a handle is always a possible failure mode  [12:49]
+<letoram> say you are connected to a rendernode assigned to GPU2, arcan runs only using GPU1 and gets a handle, tries to map it, then the driver tries to negotiate so called
+          PRIME buffers which rely on a scarce resource, that resource isn't available - bam, no handle passing  [12:50]
+<letoram> unpredictable runtime failure
+<letoram> I think durden has help for testing that, target/video/advanced/disable buffer passing
+<letoram> then the display server explicitly says for this target that no, I won't accept GPU buffers from you
+<joe9> cool, got it working on X. That is such a relief.  [12:53]
+<joe9> How do you structure your build files (make, etc.) when building for osx and durden-only?  [12:54]
+<letoram> durden is completely disassociated from arcan build etc. wise,
+<letoram> for OSX it's just like with SDL on X,  [12:55]
+<letoram> i.e. cmake -DVIDEO_PLATFORM=sdl ../src and it figures out the rest
+<joe9> letoram: I am not talking about durde or arcan build
+<joe9> letoram:  I am talking about any client apps that you might be writing. such as what I am doing. a standalone app.
+<joe9> for example, I have different LDFLAGS for the different backends  [12:56]
+<letoram> I just let the shmif- dependency pull the rest in
+<letoram> but most "standalone" work for me is writing backends for other projects, so there's infrastructure to latch on to  [12:57]
+<letoram> arcan install should come with the normal pkgtool stuff
+<letoram> btw. if you want to test your external app without something as big as durden running,  [13:00]
+<joe9> ok, will just reuse the -DVIDEO_PLATFORM=sdl as preprocessor directive in my code
+<letoram> http://pastebin.com/fLrpgJfK  [13:04]
+<letoram> that's pretty much the minimum to recuringly accept a connection with the ARCAN_CONNPATH=demo  [13:05]
+<letoram> so save as demo.lua in a folder called demo, arcan /path/to/demo and it should work :)
+<joe9> cool, will try that. That is so cool. Thanks a lot.
+<joe9> The DISPLAYHINT event worked well. Thanks.  [14:02]

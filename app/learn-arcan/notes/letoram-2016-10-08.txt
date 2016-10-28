@@ -1,0 +1,25 @@
+
+[Sat Oct  8 2016]
+<letoram> http://pastebin.com/hXwuxuUd :)  [01:27]
+<joe9> letoram: Thanks a lot for the detailed comment.  [02:19]
+<joe9> my workflow involves using terimnal + emacs + firefox. I think terminal comes
+       with arcan/durden. emacs can run with --no-window, so it is fine. and, I can
+       use qemu to run firefox, correct?  [02:20]
+<letoram> correct,  [02:27]
+<letoram> but there's a but :)  [02:28]
+<joe9> what is the "but"?  [02:29]
+<joe9> "patched qemu"?  [02:30]
+<letoram> 1. you'll fight a bit getting the keymap you want (I don't have a conversion
+          from say xkb-), 2. no sound in the qemu backend yet (though that can of
+          course still map to alsa etc.)
+<letoram>  and patched qemu of course :)
+<joe9> I was trying to figure out the keyboard stuff as my keymap is different
+       https://github.com/joe9/skb/blob/master/src/Keymap/CustomDvorak.hs  [02:32]
+<joe9> Thanks. will try to boot into durden before tackling it.
+<letoram> you can always remap inside durden, I've used it with a guitar hero
+          controller :)
+<joe9> I do not care for sound, so, not an issue for me.  [02:33]
+*** durden: Unknown command
+<joe9> ok, Thansk.  [02:34]
+<joe9> Thanks
+<letoram> no problem, and good luck :)  [02:35]

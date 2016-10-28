@@ -1,0 +1,57 @@
+
+[Tue Oct 11 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [01:31]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9_ joe9 Earnestly millboy Orochimarufan FreeFull Cloudef posixninja @letoram redpill wolfmitchell zgrep
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+
+[Tue Oct 11 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [09:28]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 millboy Earnestly Orochimarufan FreeFull Cloudef posixninja @letoram redpill wolfmitchell zgrep
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+<joe9> letoram: got it, I was missing the resize.
+<joe9> letoram: Thanks for the suggestion.  [09:29]
+<letoram> so you have buffers flying around and GL working? :)
+<joe9> letoram: funny, I have the basic template working. It should get easier from here (optimism!!)  [09:34]
+<letoram> well, it's GL.. easy is not really the state of things :)  [09:35]
+<joe9> btw, quick question, I noticed a call to    if ((status = arcan_shmifext_headless_setup(arcan_shmif_primary(SHMIF_INPUT),..) whereas I followed this function (from
+       reading the code):    struct arcan_shmif_cont arcanShmifControl = arcan_shmif_open(SEGID_APPLICATION, SHMIF_ACQUIRE_FATALFAIL, &shmarguments); just want to check if you
+       have any recommendations ?  [09:36]
+<joe9> would you recommend arcan_shmif_primary(SHMIF_INPUT) or arcan_shmif_open(SEGID_APPLICATION, SHMIF_ACQUIRE_FATALFAIL, &shmarguments) to build the arcan_shmif_cont  [09:37]
+<letoram> primary is a different beast altogether  [09:38]
+<letoram> it comes into play when I write backends for things like SDL, Qemu etc. where the codebase has a separation between audio and video (or possibly multi-windows)  [09:39]
+<letoram> it is just an accessor method to a static shmif_cont (the "primary" connection, kill that and any subwindows die)
+<joe9> letoram: oh, ok. Thanks. I should just stick with using SEGID_APPLICATION... stuff  [09:40]
+<letoram> you have quite a few different SEGID_ to chose from though (although not that many make a difference, it is up to the DE scripts)
+<letoram> SEGID_GAME, SEGID_VM, SEGID_TUI, ...  [09:41]
+<letoram> the backend thing is almost always the pattern "have shared setup routine that is called from both audio and video init. setup checks if primary- is set, if not, it
+          makes the shmif_open connection and then sets this as primary.. alloc a struct that maps whatever state I'm writing a backend for needs and set that as the (void*) tag
+          to the primary connection  [09:42]
+<joe9> for this particular app, I think SEGID_WIDGET would be good.  [09:43]
+<letoram> durden will (very soon) route SEGID_WIDGET to the global menu window :)
+                                                                                [09:45]
+<joe9> oh, ok. So, I am better off with SEGID_APPLICATION.  I do not want the window
+       to handle much input (keyboard/mouse). It is more of a realtime chart app.
+                                                                                [09:48]
+<letoram> you can just discard them, but remember to poll-flush the event-queue so
+          arcan doesn't thing you're not responding  [09:52]
+<joe9> letoram: yes, I have to get to how to do input poll/wait/flush. any C samples
+       that can guide me, please? I have seen docs/samples using lua
+       scripts/applications.  [09:54]
+<letoram> rather trivial:
+          https://github.com/letoram/arcan/blob/master/tests/frameservers/counter/counter.c
+                                                                                [09:56]
+<letoram>
+          https://github.com/letoram/arcan/blob/master/src/shmif/arcan_shmif_event.h#L195
+          closest to documentation there is  [09:57]
+
+[Tue Oct 11 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [11:54]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 millboy zgrep wolfmitchell redpill @letoram posixninja Cloudef FreeFull Orochimarufan Earnestly
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+<joe9> :q  [11:58]

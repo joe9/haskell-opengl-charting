@@ -1,0 +1,30 @@
+
+[Fri Oct  7 2016]
+<joe9> hello, I have heard great things about arcan / durden and am trying it out.
+                                                                                [22:34]
+<joe9> Just want to get your opinions on the possibilities or limitations
+<joe9> I currently use xmonad with 2 gpu's and 3 monitors.
+<joe9> I am not sure how that would translate to arcan. Would I need 2 arcan
+       instances? Would the 2 arcan instances coexist without issues on different
+       cards? I understand that I cannot move windows across those instances.  [22:35]
+<joe9> On a different note, my real motivation to try arcan/durden is to get an egl
+       context so I can execute my own gl* calls to render.  [22:36]
+<joe9> On linux, using Xlib, to render using my own gl* calls, I had to go through
+       XOpenDisplay.  [22:37]
+<joe9> As you are probably aware, XOpenDisplay is single threaded and if my app had
+       multiple threads, it became a nuisance to manage all the contexts in the main
+       thread (or, keeping the context current, etc.)
+<joe9> With wayland, I can use egl and egl seems to work fine with a single opengl
+       context per thread. but, there are no good wayland tiling window managers and
+       the author of wlc/orbment has discontinued maintenance on it.  [22:39]
+<joe9> I found durden/arcan as an alternative display server or tiling window manager
+       without an Xlib dependency.  [22:40]
+<joe9> this is my sample code that I used to test egl on
+       wayland. https://gist.github.com/82e174008d0d93c99a5ee80d6d333c71  [22:42]
+<joe9> I program in haskell as my app uses it. Any suggestions on the FFI so I can
+       build such programs using haskell? I probably need the FFI to get the
+       eglContext. After that, it would the egl or gl bindings.  [22:43]
+<joe9> any kind thoughts that can help/guide me out, please?  [22:44]
+<letoram> hi joe,  [22:46]
+<letoram> I'm out travelling - back home in 3-4 hours, I'll answer you then :)  [22:47]
+<joe9> letoram:  Thanks a lot for the response. No hurries.  [22:48]

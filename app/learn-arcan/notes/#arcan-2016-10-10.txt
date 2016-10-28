@@ -1,0 +1,88 @@
+
+[Mon Oct 10 2016]
+-arcanbot- [arcan] letoram pushed 1 new commit to master: https://git.io/vPRk0  [00:21]
+-arcanbot- arcan/master 2acfaaf bjornstahl: (platform/posix) preserve env for afsrv_terminal...
+<letoram> joe9: does [2acfaaf] mitigate your issue?
+
+[Mon Oct 10 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [01:47]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9_ joe9 Orochimarufan millboy FreeFull zgrep Earnestly wolfmitchell redpill letoram posixninja Cloudef
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+
+[Mon Oct 10 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu (
+    -display arcan )  [07:35]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 Earnestly millboy Orochimarufan FreeFull Cloudef posixninja
+    letoram redpill wolfmitchell zgrep
+<joe9> letoram: thanks, the terminal is working fine now. It is carrying over the previous environment.  [07:36]
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+<joe9> letoram: thanks, not sure if I had too spoken on connecting to the irc. just want to make sure that you received my message "the terminal is working fine now. It is
+       carrying over the previous environment."  [08:13]
+
+[Mon Oct 10 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [09:19]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 Earnestly millboy Orochimarufan FreeFull Cloudef posixninja @letoram redpill zgrep wolfmitchell
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+<letoram> joe9: yes, I got the message :)
+<joe9> letoram: With accessX, all modifiers are sticky (Shift, Control, other Mod*). With durden, I noticed that only the Meta key is sticky.  [09:20]
+<joe9> letoram: Just want to check if there was any reason why you opted to have only the Meta key as sticky instead of all modifiers.
+<letoram> plain and simple ignorance :)  [09:23]
+<letoram> that and I needed one-handed meta sticky  [09:26]
+<letoram> normal modifier sticky (and debounce) should be implemented in the symtable.lua script that is re-used everywhere, the meta thing has a different codepath in durden
+
+[Mon Oct 10 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [16:36]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 Earnestly millboy Orochimarufan FreeFull Cloudef posixninja @letoram redpill wolfmitchell zgrep
+*** #arcan modes: +t  [16:37]
+*** #arcan was created on 2015-05-30 15:41:07
+
+[Mon Oct 10 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [16:59]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 Earnestly millboy Orochimarufan FreeFull Cloudef posixninja @letoram redpill zgrep wolfmitchell
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+
+[Mon Oct 10 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [17:36]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 Earnestly millboy Orochimarufan FreeFull Cloudef posixninja @letoram redpill wolfmitchell zgrep
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+
+[Mon Oct 10 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [18:29]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 Earnestly millboy Orochimarufan zgrep wolfmitchell redpill @letoram posixninja Cloudef FreeFull
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+
+[Mon Oct 10 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [19:08]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 Earnestly millboy Orochimarufan zgrep wolfmitchell redpill @letoram posixninja Cloudef FreeFull
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+
+[Mon Oct 10 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [19:49]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 Earnestly millboy Orochimarufan FreeFull Cloudef posixninja @letoram redpill wolfmitchell zgrep
+*** #arcan modes: +t  [19:50]
+*** #arcan was created on 2015-05-30 15:41:07
+<joe9> :q  [20:06]
+
+[Mon Oct 10 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [20:20]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 Earnestly millboy Orochimarufan FreeFull Cloudef posixninja @letoram redpill wolfmitchell zgrep
+<joe9> :q
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07

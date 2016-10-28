@@ -1,0 +1,125 @@
+
+[Sat Oct  8 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [04:37]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 millboy FreeFull Cloudef posixninja letoram redpill wolfmitchell Orochimarufan Earnestly zgrep
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+<joe9> letoram: I am logging in through the tty, and doing this to start arcan: "cd /home/j/dev/apps/durden-arcan/arcan/build && ./arcan -p /home/j/etc/arcan/appl
+       /home/j/dev/apps/durden-arcan/durden/durden""  [04:40]
+<joe9> I notice that the terminals I open up using m1_return do not source /etc/profile
+<joe9> just want to check if this is expected behaviour.  [04:41]
+<joe9> When mapping keys on durden startup, the last prompt is "Press and hold the desired combination: ESCAPE to cancel" -- What is this desired combination for? I tried a few
+       Ctrl - Alt - BackSpace and Ctrl -Alt - Delete, but, the message prompt remained  [04:43]
+<letoram> hmm, good question :D
+<letoram> havn't done that one in a while ..
+<joe9> After logging into the tty and before starting arcan, I am doing "sudo chmod ugo+rwx /dev/dri/card0", but, still I get the "platform/egl-dri(), couldn't get drmMaster
+       (Permission denied), trying  to continue anyways."  [04:44]
+<letoram> drmMaster is a facepalm part of drm,
+<joe9> below is the log when I start arcan using the command: " ./arcan -p /home/j/etc/arcan/appl /home/j/dev/apps/durden-arcan/durden/durden 2>&1 | tee --append
+       durden-start.messages" https://gist.github.com/c99d7a53f3985fc15a014040a3fcb03d  [04:45]
+<letoram> you actually need some root only capability to open the card as drm master
+<joe9> letoram: can I do setuid on the arcan exe?
+<joe9> letoram: would that help?
+<letoram> it might, here I can continue without drmMaster (there are some sideeffects)
+<joe9> this is the command I used previously -- sudo chown root:users build/arcan && sudo chmod a+s build/arcan  [04:46]
+<letoram> what gpu are you using?  [04:47]
+<joe9> letoram: so, just stick with what I am doing now: "sudo chmod ugo+rwx /dev/dri/card0" and start arcan
+<joe9> letoram: https://paste.pound-python.org/show/erKUuT65UMY2bZ3esWAO/
+<letoram> yeah, hopefully drmMaster thing will change with the whole render-noes thing, else I'll have to add support for the whole "separate launcher opens, gets privileges,
+          drops, launches arcan, hands over descriptors..."  [04:48]
+<letoram> but "arcan reported no available translation capable device" is the first big deal
+<joe9> letoram: do not worry about it.  [04:49]
+<joe9> letoram: I think I fixed that. I added the user to the group input
+<letoram> yeah, that's the right fix
+<joe9> letoram: I have the keyboard working.
+<letoram> don't have my posix spec. available, but I thought it was shell that should source etc/profile and not the pty- setup, hmm  [04:50]
+<joe9> "/etc/profile is invoked only for login shells because that is its specific purpose." -- could that be the issue? I am not using a login shell. I am logging in to the tty
+       and then starting arcan.  [04:52]
+<letoram> indeed  [04:53]
+<joe9> letoram: font is ok. emacs --no-window started fine in the terminal. are there any better fonts out there? I can use the current default. But, just want to check if there
+       is a better option.  [04:54]
+<letoram> probably :)  [04:55]
+<letoram> you can just add to durden/fonts
+<letoram> and then global/config/terminal/font to switch
+<letoram> thoough I might have messed that one up, fix on the laptop but not pushed yet  [04:56]
+<joe9> letoram: ok, Thanks. I can pull the durden repo later  [04:58]
+-arcanbot- [durden] letoram pushed 2 new commits to master: https://git.io/vP42m
+-arcanbot- durden/master f2ec59e bjornstahl: extcon relaunch now tracks path used
+-arcanbot- durden/master abc5889 bjornstahl: fix dynamic terminal font switch (tools/pulldown break)
+<joe9> letoram: regarding changing the keymap, what would you recommend? I use dvorak and I like your approach of ditching xkb backward compatibility. With X, I just use the
+       default keyboard layout in the tty's and switch to dvorak+sticky keys through .xinitrc. I read that I can use the conv tool to generate the symtable.lua file  [05:05]
+<letoram> the conv tool "tries" to use the linux keyboard format but it does a pretty bad job   [05:06]
+<letoram> I got scared, very scared, after reading up on how that works on linux..
+<joe9> letoram: I can create my own keymap by hand. I have the keycodes and keysym tables.
+<letoram> global/input/keyboard/- bind utf-8 / bind keysym / save  [05:07]
+<letoram> should appear in devmaps/keyboard  [05:08]
+<letoram> you can patch the lua file raw there
+<joe9> on wayland, I use this    egl_display = eglGetDisplay((EGLNativeDisplayType) display); to get the eglDisplay. Any suggestions on what the command would be from arcan,
+       please?  [05:12]
+<joe9> letoram: this is my sample .c file that I used on wayland to build a simple opengl render client https://gist.github.com/1d7b20e517fd915e2d80561dfef76f65
+<letoram> didn't I cover that in the pastebin? ref: arcan_shmif_interop.h   [05:15]
+<letoram> you can also see http://github.com/letoram/SDL2/blob/master/src/video/arcan/SDL_arcanopengl.c  [05:16]
+<joe9> letoram: yes, Thanks. sorry for the bother.
+-arcanbot- [durden] letoram pushed 5 new commits to master: https://git.io/vP42d  [05:18]
+-arcanbot- durden/master 240ffc6 bjornstahl: run_display_action extended
+-arcanbot- durden/master 8e95e1e bjornstahl: lbar crash on bad step/hint
+-arcanbot- durden/master 565a6d4 bjornstahl: don't print- whitelist eval status
+<joe9> letoram: to switch monitors, should I go through the global monitor? I have 1 gpu with 2 monitors that arcan is starting up on (card0)?  [05:19]
+<joe9> s/global monitor/global config/  [05:20]
+<letoram> there's a cycle display, let me check the path  [05:23]
+<letoram> global/display/cycle active
+<joe9> thanks a lot.
+<joe9> letoram: on a different note, do you have any qemu creation scripts that you do not mind sharing for the browser, etc.? Which browser do you use or recommend for arcan?
+       Do you use durden as your primary work space?  [05:26]
+<letoram> my web use can be managed by lynx really :)  [05:31]
+<letoram> the rest is scripts for scraping forums, ...  [05:32]
+<letoram> but I usually have a win/linux VM running via QEmu for other tools
+<letoram> qemu will be godlike as soon as they figure out guest-GPU scanout buffer sharing though ..  [05:33]
+<letoram> but I'm usually just (modprobe kms; chown /dev/kms to me; qemu-system-x86_64 -enable-kvm -m 4096 -smp 4 -display arcan -netdev user,id=mynet0,smb=/home/me/shared
+          -cdrom if/i/need/install/iso -cpu host vmimage.qcow  [05:35]
+<letoram> there's something more needed (usbdevice to tablet or something) but I don't have it at hand right now  [05:36]
+<letoram> hmm, should really sync/finish the qemu backend for audio/multidisplay/virgil.. free sat/sun/mon so a decent sized project..  [05:46]
+<joe9> ok, Thanks.  [06:11]
+<joe9> letoram: https://gist.github.com/f91316d9e3a418ae81b529dcdca4c3b0 I got this
+       far and started learning about the FBO and realize that it would be software
+       rendering. In my case, I render directly to the gpu using the glbindbuffer,
+       gldraw, etc. I do not write anything to the cpu buffer so that got me thinking
+       if I even need the "arcan shared memory context". I am not sure if I need the
+       "shared memory context" to transfer the data to the  [08:43]
+<joe9> gpu buffer (glBufferData). Any thoughts, please?
+<letoram> think of it as the Display in X  [08:44]
+<letoram> but you need to explicitly synch, that is the arcan_shmif_signal or for GL,
+          arcan_shmif_signalhandle  [08:45]
+<letoram> https://speakerdeck.com/letoram/arcan-design slide 15 or so +
+          https://github.com/letoram/arcan/wiki/Shmif  [08:49]
+<joe9> if you do not mind me asking, why do I need "explicit synch"? I would be doing
+       glFlush. In glut, there is "glutSwapBuffers() and glutPostRedisplay()". Is the
+       "explicit sync" similar to that? I will check out the slide. Thanks.
+<letoram> the sync is between arcan and the connected client,  [08:50]
+<letoram> when glFlush finishes it updates the contents of your display, rendertarget
+          etc. 
+<joe9> oh, ok.  [08:51]
+<letoram> but arcan doesn't know what you want to display - that's the signalhandle
+          thing
+<letoram> but in your case, you want arcan_shmifext_eglsignal (what actually happens:
+          https://github.com/letoram/arcan/blob/master/src/shmif/egl-dri-rnode/egl-dri-rnode.c:#L272
+          )  [08:53]
+<joe9> letoram: ok, Thanks.  [08:54]
+<joe9> letoram: I think I got it. FBO is just the frame buffer object (vertext buffer data) etc. How does arcan know which window this stuff should be displayed on?  [09:15]
+<joe9> letoram: do not worry about it.
+<joe9> letoram: I need to read up more on FBO's. I think they are not the same as the vertex buffer data. They seem to be a superset of that. Maybe, I specify the window details
+       while creating/initializing the FBO.  [09:16]
+<letoram> the 10s explanation:  [09:25]
+<letoram> an FBO is an abstract container that can hold a color, depth, and stencil buffer (but you don't need all three)  [09:26]
+<letoram> you can only have one FBO active at a time in a GL context and it is expensive to switch between them
+<letoram> the draw commands you submit, output to the active FBO and if there's no active FBO, the Display etc.  [09:27]
+<letoram> this is used for a ton of effects, everything from shadow mapping to glows to blurs  [09:28]
+<letoram> see the boilerplate in https://github.com/letoram/SDL2/blob/master/src/video/arcan/SDL_arcanopengl.c#L104  [09:29]
+<joe9> letoram: Thanks. sorry for the bother. I think I understand the Frame Buffer. Where is the window actually created? when I do shmif_open?  [09:34]
+<letoram> in shmif_open
+<joe9> got it. Thanks a lot.  [09:35]
+-arcanbot- [durden] letoram pushed 1 new commit to master: https://git.io/vP4QR  [11:43]
+-arcanbot- durden/master 7e5b57b bjornstahl: keymap loading regression fix
+-arcanbot- [durden] letoram pushed 1 new commit to master: https://git.io/vP477  [12:07]
+-arcanbot- durden/master 64bf482 bjornstahl: always try and load keymap named default on startup

@@ -1,0 +1,16 @@
+
+[Fri Oct  7 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [18:39]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 FreeFull Orochimarufan millboy zgrep Earnestly wolfmitchell redpill letoram posixninja Cloudef
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+<joe9> Hello, have been hearing a lot of good things about arcan. Is it possible to run emacs when using arcan as a primary environment?
+
+[Fri Oct  7 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [21:48]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 millboy Orochimarufan zgrep Earnestly wolfmitchell redpill letoram posixninja Cloudef FreeFull
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+*** No text to send  [22:33]

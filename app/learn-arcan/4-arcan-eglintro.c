@@ -280,37 +280,44 @@ int main(int argc, char ** argv)
       return EXIT_FAILURE;
    }
 
-   if (!arcan_shmif_resize(&arcanShmifControl, 320, 200)){
-      fprintf(stderr,"arcan_shmif_resize failed: file %s, line %i\n", __FILE__, __LINE__);
-      arcan_shmif_drop(&arcanShmifControl);
-   }
+   /* <letoram> I'm guessing that if you build b7166af1bedb49a55c13cad1b899bf3a50b01159 it works?  [22:02] */
+   /* <letoram> looked at the code one more time,  [22:48] */
+   /* <letoram> https://github.com/letoram/arcan/commit/c3abd7d19cbf6d4daffac751a66e565a9ef9fbe0 this is the commit that makes your EGL client not work  [22:50] */
+   /* <letoram> you should just be able to remove the explicit arcan_shmif_resize call in the beginning, as soon as _open returns it has figured out the dimensions now  [22:53] */
+   /* <letoram> it's the https://github.com/letoram/arcan/blob/master/src/shmif/arcan_shmif_control.c#L1853 code that steals your events before you get them :) */
+   /*    if (!arcan_shmif_resize(&arcanShmifControl, 320, 200)){ */
+   /*       fprintf(stderr,"arcan_shmif_resize failed: file %s, line %i\n", __FILE__, __LINE__); */
+   /*       arcan_shmif_drop(&arcanShmifControl); */
+   /*    } */
    printf("window dimensions: width %lu, height: %lu\n", (unsigned long)arcanShmifControl.w, (unsigned long)arcanShmifControl.h);
 
-   bool running = true;
-   arcan_event event;
-   size_t width = 0, height = 0;
-   while (arcan_shmif_wait(&arcanShmifControl, &event) == 1){
-      if (event.category == EVENT_TARGET)
-	 switch (event.tgt.kind){
-	    case TARGET_COMMAND_EXIT:
-	       running = false;
-	       break;
-	    case TARGET_COMMAND_DISPLAYHINT:
-	       width = (size_t)event.tgt.ioevs[0].iv;
-	       height = (size_t)event.tgt.ioevs[1].iv;
-	       if (!arcan_shmif_resize(&arcanShmifControl, width, height)){
-		  fprintf(stderr,"arcan_shmif_resize failed: file %s, line %i\n", __FILE__, __LINE__);
-		  running=false;
-		  arcan_shmif_drop(&arcanShmifControl);
-	       }
-	       printf("window dimensions: width %lu, height: %lu\n", (unsigned long)arcanShmifControl.w, (unsigned long)arcanShmifControl.h);
-	       break;
-	    default:
-	       break;
-	 }
-      if (0 < width) {break;}
-   }
-   if (running == false) {return EXIT_FAILURE;};
+   /*    bool running = true; */
+   /*    arcan_event event; */
+   /*    size_t width = 0, height = 0; */
+   /*    while (arcan_shmif_wait(&arcanShmifControl, &event) == 1){ */
+   /*       printf("wait returned\n"); */
+   /*       if (event.category == EVENT_TARGET) */
+   /*	 switch (event.tgt.kind){ */
+   /*	    case TARGET_COMMAND_EXIT: */
+   /*	       running = false; */
+   /*	       break; */
+   /*	    case TARGET_COMMAND_DISPLAYHINT: */
+   /*	       printf("received TARGET_COMMAND_DISPLAYHINT\n"); */
+   /*	       width = (size_t)event.tgt.ioevs[0].iv; */
+   /*	       height = (size_t)event.tgt.ioevs[1].iv; */
+   /*	       if (!arcan_shmif_resize(&arcanShmifControl, width, height)){ */
+   /*		  fprintf(stderr,"arcan_shmif_resize failed: file %s, line %i\n", __FILE__, __LINE__); */
+   /*		  running=false; */
+   /*		  arcan_shmif_drop(&arcanShmifControl); */
+   /*	       } */
+   /*	       printf("window dimensions: width %lu, height: %lu\n", (unsigned long)arcanShmifControl.w, (unsigned long)arcanShmifControl.h); */
+   /*	       break; */
+   /*	    default: */
+   /*	       break; */
+   /*	 } */
+   /*       if (0 < width) {break;} */
+   /*    } */
+   /*    if (running == false) {return EXIT_FAILURE;}; */
 
    GLint flags;
    glGetIntegerv(GL_CONTEXT_FLAGS, &flags);

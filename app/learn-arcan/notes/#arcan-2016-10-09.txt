@@ -1,0 +1,40 @@
+
+[Sun Oct  9 2016]
+<joe9> letoram: I want to test out a sample egl headless client that I intend to run using arcan. Just want to check if there is a way of doing it when using X? Can I build
+       arcan for sdl2 backend and run the egl headless context stuff? I am trying to avoid rebooting to arcan to test it out and I do not have my development environment setup
+       in arcan to program and test with arcan yet.  [02:16]
+<letoram> almost :)  [03:01]
+<letoram> the sdl1.2 platform can be used, but the shmifext- part for x11 doesn't do buffer handle passing (no guarantee gbm exists)
+<letoram> there is a workaround with a performance penalty  [03:02]
+<letoram> https://github.com/letoram/arcan/blob/master/src/hijack/sdl12/sdl12.c#L364
+<letoram> (agp is the internal abstraction for GL used in the engine), replace the agp_readback stuff with something like glReadPixels or glGetTexImage  [03:05]
+<joe9> letoram: ok, thanks.  [07:06]
+<letoram> joe9: did you get anywhere with qemu?  [14:51]
+<joe9> letoram: did not try qemu. still getting my head around the egl headless client. Now, I have a version that compiles
+       https://gist.github.com/9faadb17f64b5ea2a9e991d4ca3fe196 as an fyi.  [19:44]
+
+[Sun Oct  9 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [20:49]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 Orochimarufan millboy FreeFull Cloudef posixninja letoram redpill wolfmitchell Earnestly zgrep
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+<joe9> letoram: I think there is a bug in the terminal. It is not passing all the current environment variables to the shell when it starts it. But, I am not well versed to
+       debug the default/arcterm.c (I presume that this is the entry point for the terminal).  [21:15]
+<joe9> letoram: The way I can test this behaviour is: login to the tty, start arcan, open terminal, check environment variables.  [21:16]
+
+[Sun Oct  9 2016]
+*** Topic for #arcan: Experimental QEmu integration: https://github.com/letoram/qemu ( -display arcan )  [21:36]
+*** #arcan: topic set by letoram!letoram@78.129.172.23, 2016-05-31 22:33:18
+*** Users on #arcan: joe9 Orochimarufan millboy FreeFull Cloudef posixninja letoram redpill wolfmitchell zgrep Earnestly
+*** #arcan modes: +t
+*** #arcan was created on 2015-05-30 15:41:07
+<joe9> I think the relevant code is lines 1709-1710 of src/frameserver/terminal/default/arcterm.c  [21:39]
+<joe9> letoram: on a different note, I am still trying to get the headless egl stuff to work. It is coredumping at the first gl* call. Not sure if this has something to do with
+       arcan (there seems to be a gloc* => gl*) or my code https://gist.github.com/7848a58ce929827a4b8e93e32a6d3bfe . just want to check if you have stumbled upon this before.
+                                                                                                                                                                           [21:40]
+<letoram> joe9: the terminal env-var thing, it's the way platform/posix/frameserver.c spawns things actually, it doesn't check if the target frameserver is a terminal and just
+          wipes the env regardless (_game, _decode, _encodde, _avfeed and explicit db_whitelist should not inherit env)  [23:00]
+<letoram> the problem you describe smell like the mess in openGL with mapping function pointers for newer gl functions  [23:19]
+<letoram> I see no glewInit() (also, glew didn't support EGL until 2.0)  [23:21]
+<letoram> if you debug and step, do you have valid addresses for glBegin vs. some of the other functions?  [23:33]

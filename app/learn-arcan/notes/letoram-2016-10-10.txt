@@ -1,0 +1,67 @@
+
+[Mon Oct 10 2016]
+<joe9>  need some guidance, please?  [18:37]
+<joe9>
+       https://github.com/joe9/haskell-opengl-charting/blob/master/app/learn-arcan/3-arcan-eglintro.c
+<joe9>        is the source code. output is
+<joe9>        https://gist.github.com/ce32e0bbbf5a4522061bd16aad26b51f . I think the
+       call to
+<joe9>        arcan_shmifext_eglsignal is returning 0. I am suspecting that the 0 is
+       being
+<joe9>        returned by the signalhandle function (which seems to be expecting a
+       file
+<joe9>        handle). I am providing an OpenGL texture id.  [18:37]
+<joe9> I am expecting a green window.  [18:38]
+<joe9> When I run this app in arcan, I see a new window opening, but, the window's green border is around a small black box. It is not a green box as I expect (similar code
+       using glut and X shows a green window)  [18:39]
+<joe9> https://github.com/joe9/haskell-opengl-charting/tree/master/app/learn-arcan has the build files (config.mk and Makefile) that I used to build this executable.  [18:40]
+<joe9> Any kind comments, please?
+<joe9> let me add the egl_meta to build the display instead of sending 0 to _eglsignal function. https://paste.pound-python.org/show/Jj6yN3xwLRnguPpjIilr/  [18:49]
+<joe9> will be back later after trying it.  [18:50]
+
+[Mon Oct 10 2016]
+<joe9> output: https://gist.github.com/9e0057b0100f04f667b8f817b0b00cc2  [19:52]
+<joe9> source : https://gist.github.com/76039a480e857e7de34de86282336010  [19:53]
+<joe9> build directory:
+       https://github.com/joe9/haskell-opengl-charting/tree/master/app/learn-arcan
+                                                                                [19:54]
+<joe9> I added these lines https://paste.pound-python.org/show/giSNDEONFz8vuueZTvMI/
+       following the lines 94-100 here
+       https://github.com/letoram/SDL2/blob/master/src/video/arcan/SDL_arcanopengl.c
+                                                                                [19:58]
+<joe9> I could not figure where the space for the vidp is being allocated. I am not
+       sure if the arcan_shmif_* routines take care of that.
+<joe9> I did not add this line  glocGetIntegeri_v(GL_TEXTURE_BINDING_2D, 1, &id); as I
+       could not figure why I need that. I could just rebind to the texture id 0 after
+       the glGetTexImage.  [20:01]
+<joe9> Is it hard to provide functionality to render to a window instead? Or, are you
+       thinking that as vulkan is here, there is no point in supporting this older
+       stuff? If so, I can try to get a vulkan supporting gpu.  [20:06]
+
+[Mon Oct 10 2016]
+<letoram> problem is that all these interfaces are in flux  [22:01]
+<letoram> that the wayland etc. people are somewhat claiming that these things are 'ready to be default' is complete nonsense  [22:02]
+<letoram> they rely on a bunch of hacks they did in Mesa because they're also mesa devs, and the rest should just 'adopt'
+<letoram> and nvidia didn't want to have any of that, so now we have 2 competing solutions, none of them are complete - and the devs involved are starting to say "ok, we might
+          need to agree on something"  [22:03]
+<letoram> so until whatever the real buffer passing solution should be, we're sortof stuck relying on things like this  [22:04]
+<letoram> signalhandle requires a descriptor,
+<letoram> there's a convenience function that does that job for you
+<letoram> ah sorry saw now that you figured that out (the eglsignal)  [22:05]
+<letoram> vidp is allocated on the resize call
+<letoram> and you need to flush before you signal  [22:06]
+<letoram> otherwise the data is just pending on the gpu somewhere
+<letoram> ah. another thing  [22:21]
+<letoram> eglsignal and signal are the same operation, one is if the data is being sent from the GPU (eglsignal or signalhandle) and the other if that fails (and for software-
+          only drawing using other tools than opengl)  [22:23]
+<letoram> so if you do eglsignal, arcan will grab that handle, map to a texture and draw..  [22:24]
+<letoram> gl workflow:
+<letoram> init: setup EGL with whatever, build and bind FBO
+<letoram> connect/open arcan, arcan_shmif_resize to negotiate buffers  [22:26]
+<letoram> draw loop: queue your GL draw calls, glFlush(), then shmifext_eglsignal
+<letoram> that should be enough
+<letoram> eglsignal *can* fail but the failure is asynchronous, it fails if the display server determines that it can't use handle-passing anymore  [22:27]
+<letoram> if it's compositing on a different GPU, or the GPU has run out of buffers that can be mapped to a handle and so on - on multi-GPU this is extremely complicated  [22:28]
+<letoram> (and the reason for the GBM vs EGLStreams debate if you follow the politics going around)  [22:29]
+<letoram> if handle passing isn't working, then the fallback resort is the whole glReadPixels (or glGetTexImage2D, ...) into vidp and then signal
+<letoram> but that is a strong performance penalty (but better than nothing at all)  [22:30]
