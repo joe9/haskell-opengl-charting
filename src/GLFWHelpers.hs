@@ -6,14 +6,17 @@ module GLFWHelpers where
 --------------------------------------------------------------------------------
 
 import Control.Concurrent.STM    (TQueue, atomically, newTQueueIO, tryReadTQueue, writeTQueue)
-import           Control.Exception.Safe
+import Control.Concurrent
+import Control.Exception.Safe
 import "gl" Graphics.GL
 import Control.Monad             (unless, when, void)
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.List                 (intercalate)
 import Data.Maybe
+import Data.Bits
 import Text.PrettyPrint
 import System.IO
+-- import Quine.GL.Version
 
 import qualified Graphics.UI.GLFW          as GLFW
 
@@ -102,15 +105,6 @@ withInitializedWindow continueFunction = do
         GLFW.swapInterval 0
 
         (fbWidth, fbHeight) <- GLFW.getFramebufferSize win
-        major <- GLFW.getWindowContextVersionMajor win
-        minor <- GLFW.getWindowContextVersionMinor win
-        revision <- GLFW.getWindowContextVersionRevision win
-        putStrLn ("OpenGL version recieved: " ++ show major ++ "," ++ show minor ++ "," ++ show revision);
-        version <- GLFW.getVersion
-        putStrLn ("Supported GLFW Version is: " ++ show version);
-        versionString <- GLFW.getVersionString
-        putStrLn ("Supported GLFW Version String is: " ++ show versionString);
---         putStrLn ("Supported GLSL is %s\n", (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
         let env = Env
               { envEventsChan    = eventsChan
@@ -144,9 +138,36 @@ withWindow width height title f = do
                             >> putStrLn "ended window!")
           (maybe (return ())
                  (\win ->
-                    do GLFW.makeContextCurrent (Just win)
-                       -- OpenGL stuff
-                       withProgram
+                    do  GLFW.makeContextCurrent (Just win)
+                        -- OpenGL stuff
+                        threadDelay 1000000
+                        major <- GLFW.getWindowContextVersionMajor win
+                        minor <- GLFW.getWindowContextVersionMinor win
+                        revision <- GLFW.getWindowContextVersionRevision win
+                        putStrLn ("OpenGL version recieved: " ++ show major ++ "," ++ show minor ++ "," ++ show revision)
+                        version <- GLFW.getVersion
+                        putStrLn ("Supported GLFW Version is: " ++ show version)
+                        versionString <- GLFW.getVersionString
+                        putStrLn ("Supported GLFW Version String is: " ++ show versionString)
+                        contextFlags <- getIntegerv GL_CONTEXT_FLAGS
+                        putStrLn ("GL Context flags are: " ++ show contextFlags)
+                        if contextFlags .&. GL_CONTEXT_FLAG_DEBUG_BIT == 2
+                            then putStrLn "GL Debug Flag is set"
+                            else putStrLn "GL Debug Flag is not set"
+                        -- OpenGLHelpers.withProgram call to installDebugHook installs glDebugMessagecallback
+                        -- check 4-arcan-eglintro.c or glfw/tests/glfwinfo.c for more details
+                        checkGLErrors (glEnable GL_DEBUG_OUTPUT)
+                        vendor <- checkGLErrors (getString GL_VENDOR)
+                        putStrLn ("GL_VENDOR: " ++ vendor)
+                        version <- checkGLErrors (getString GL_VERSION)
+                        putStrLn ("GL_VENDOR: " ++ version)
+                        renderer <- checkGLErrors (getString GL_RENDERER)
+                        putStrLn ("GL_RENDERER: " ++ renderer)
+                --         putStrLn ("GL_VERSION: " ++ show version)
+                --         putStrLn ("Supported GLSL is %s\n", (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+                        glslversion <- checkGLErrors (getString GL_SHADING_LANGUAGE_VERSION)
+                        putStrLn ("GL_SHADING_LANGUAGE_VERSION: " ++ glslversion)
+                        withProgram
                          (\programId ->
                               colorUniformLocationInProgram programId >>=
                                f win)))

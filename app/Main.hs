@@ -65,10 +65,9 @@ main = do
     async
       (threadDelay (1 * 1000 * 1000) >>
        updatedData ref (dataSeries, xscale, pricescale, volumescale))
-  --     withGLFW
-  --         (window debugUsingSingleBuffer debugRenderer)
-  --     withGLFW
-  --         (withInitializedWindow initializeDrawables (renderDrawables ref))
+  -- check TestDrawable for simple functions to debug this
+--   withGLFW
+--     (withInitializedWindow (\e s -> debugUsingSingleBuffer (debugRenderer e s)))
   withGLFW
     (withInitializedWindow
        (\e s -> withInitializedDrawables
