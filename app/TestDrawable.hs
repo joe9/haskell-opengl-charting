@@ -14,7 +14,7 @@ import           Control.Concurrent
 import qualified Data.Vector.Storable as VS
 import           "gl" Graphics.GL
 import           Graphics.UI.GLFW     as GLFW
-import           Protolude hiding (State)
+import           Protolude            hiding (State)
 
 import Drawable
 import Drawable.Frame

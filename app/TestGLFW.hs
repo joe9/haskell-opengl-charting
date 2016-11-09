@@ -1,25 +1,27 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts  #-}
 
 module Main
   ( main
   ) where
 
 --------------------------------------------------------------------------------
-import Control.Concurrent.STM    (TQueue, atomically, newTQueueIO,
-                                  tryReadTQueue, writeTQueue)
-import Control.Monad             (unless, void, when)
-import Control.Monad.RWS.Strict  (RWST, ask, asks, evalRWST, get,
-                                  liftIO, modify, put)
-import Control.Monad.Trans.Maybe (MaybeT (..), runMaybeT)
-import Data.List                 (intercalate)
-import Data.Maybe                (catMaybes)
-import Data.Text                 (unwords)
-import Data.String.Conversions (cs)
-import Protolude hiding (State, bracket)
-import Text.PrettyPrint hiding ((<>))
-import qualified Text.PrettyPrint as PP
+import           Control.Concurrent.STM    (TQueue, atomically,
+                                            newTQueueIO,
+                                            tryReadTQueue,
+                                            writeTQueue)
+import           Control.Monad             (unless, void, when)
+import           Control.Monad.RWS.Strict  (RWST, ask, asks, evalRWST,
+                                            get, liftIO, modify, put)
+import           Control.Monad.Trans.Maybe (MaybeT (..), runMaybeT)
+import           Data.List                 (intercalate)
+import           Data.Maybe                (catMaybes)
+import           Data.String.Conversions   (cs)
+import           Data.Text                 (unwords)
+import           Protolude                 hiding (State, bracket)
+import           Text.PrettyPrint          hiding ((<>))
+import qualified Text.PrettyPrint          as PP
 
 import qualified Graphics.Rendering.OpenGL as GL
 import qualified Graphics.UI.GLFW          as GLFW
@@ -142,8 +144,8 @@ main = do
     minor <- GLFW.getWindowContextVersionMinor win
     revision <- GLFW.getWindowContextVersionRevision win
     putText
-      ("OpenGL version recieved: " <>
-       show major <> "," <> show minor <> "," <> show revision)
+      ("OpenGL version recieved: " <> show major <> "," <> show minor <> "," <>
+       show revision)
     version <- GLFW.getVersion
     putText ("Supported GLFW Version is: " <> show version)
     versionString <- GLFW.getVersionString
@@ -608,7 +610,9 @@ getJoystickNames :: IO [(GLFW.Joystick, Text)]
 getJoystickNames = catMaybes `fmap` mapM getJoystick joysticks
   where
     getJoystick js =
-      fmap (maybe Nothing (\name -> Just (js, cs name))) (GLFW.getJoystickName js)
+      fmap
+        (maybe Nothing (\name -> Just (js, cs name)))
+        (GLFW.getJoystickName js)
 
 --------------------------------------------------------------------------------
 printEvent :: Text -> [Text] -> Demo ()

@@ -13,7 +13,7 @@ import           Data.IORef
 import qualified Data.Vector.Unboxed      as VU
 import           "gl" Graphics.GL
 import           Graphics.UI.GLFW         as GLFW
-import           Protolude hiding (State, ask)
+import           Protolude                hiding (State, ask)
 
 import GLFWHelpers
 import OpenGLHelpers

@@ -8,7 +8,7 @@ import           Data.Colour.Names
 import qualified Data.Vector.Storable as VS
 import qualified Data.Vector.Unboxed  as VU
 import           "gl" Graphics.GL
-import           Protolude hiding (State)
+import           Protolude            hiding (State)
 
 import Drawable
 import GLFWHelpers
