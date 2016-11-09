@@ -1,17 +1,16 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports    #-}
 
 module Main where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
-import Protolude
-import Control.Concurrent.STM    (TQueue, atomically, newTQueueIO, tryReadTQueue, writeTQueue)
 import           Control.Concurrent
 import           Control.Concurrent.Async
-import Control.Monad             (unless, when, void)
+import           Control.Concurrent.STM   (TQueue, atomically,
+                                           newTQueueIO, tryReadTQueue,
+                                           writeTQueue)
+import           Control.Monad            (unless, void, when)
 import           Data.Bits
 import           Data.Colour.Names
 import           Data.IORef
@@ -21,6 +20,7 @@ import qualified Data.Vector.Unboxed      as VU
 import           "gl" Graphics.GL
 import           Graphics.UI.GLFW         as GLFW
 import           Prelude                  hiding (init)
+import           Protolude
 import           System.Random
 
 --
@@ -70,47 +70,54 @@ main = do
       (threadDelay (1 * 1000 * 1000) >>
        updatedData ref (dataSeries, xscale, pricescale, volumescale))
   -- check TestDrawable for simple functions to debug this
---   withGLFW
---     (withInitializedWindow (\e s -> debugUsingSingleBuffer (debugRenderer e s)))
   withGLFW
     (withInitializedWindow
-       (\e s -> withInitializedDrawables
-                    [ screenDrawable
-                    , frameDrawable
-                    , priceChartDrawable
-                    , volumeChartDrawable
-                    , horizontalCrosshairDrawable
-                    , verticalCrosshairDrawable
-                    ] (run ref e s)))
+       (\e s ->
+          withInitializedDrawables
+            [ screenDrawable
+            , frameDrawable
+            , priceChartDrawable
+            , volumeChartDrawable
+            , horizontalCrosshairDrawable
+            , verticalCrosshairDrawable
+            ]
+            (run ref e s)))
   cancel a
 
-run :: IORef (VU.Vector PriceData, Scale, Scale, Scale) -> Env -> State -> [Drawable] -> IO ()
-run ref env state ds = do
-    -- number of seconds since GLFW started
+--   withGLFW
+--     (withInitializedWindow (\e s -> debugUsingSingleBuffer (debugRenderer e s)))
+run
+  :: IORef (VU.Vector PriceData, Scale, Scale, Scale)
+  -> Env
+  -> State
+  -> [Drawable]
+  -> IO ()
+run ref env state ds
+                  -- number of seconds since GLFW started
+                  -- TODO bug: on empty event, should updated the chart with new data
+ = do
+  GLFW.waitEvents
+  putStr "Received GLFW event: "
+  ustate <- processEvents env state
+  q <- GLFW.windowShouldClose (envWindow env)
+  unless
+    q
+    (do uuds <-
+          (do dataSeries <- readIORef ref
+              uds <- renderDrawables env ustate ds dataSeries
+              return uds)
+        run ref env ustate uuds)
+
 --     previousmt <- liftIO GLFW.getTime
-
-    -- TODO bug: on empty event, should updated the chart with new data
-    GLFW.waitEvents
-    putStr "Received GLFW event: "
 --     liftIO (GLFW.pollEvents)
-    ustate <- processEvents env state
-    q <- GLFW.windowShouldClose (envWindow env)
-    unless q
-        (do
-            uuds <-
-                (do dataSeries <- readIORef ref
-                    uds <- renderDrawables env ustate ds dataSeries
-                    return uds)
-            run ref env ustate uuds)
-
-processEvents :: Env -> State ->  IO State
+processEvents :: Env -> State -> IO State
 processEvents env state = do
-    me <- atomically $ tryReadTQueue (envEventsChan env)
-    case me of
-      Just e -> do
-          ustate <- processEvent env state e
-          processEvents env ustate
-      Nothing -> return state
+  me <- atomically $ tryReadTQueue (envEventsChan env)
+  case me of
+    Just e -> do
+      ustate <- processEvent env state e
+      processEvents env ustate
+    Nothing -> return state
 
 -- http://stackoverflow.com/questions/5293898/how-to-pass-state-between-event-handlers-in-gtk2hs
 -- the below is not a working solution. Use MVar or TVar or IORef as

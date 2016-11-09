@@ -1,13 +1,10 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports    #-}
 
 module OpenGLHelpers where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
-import Protolude
 import           Control.Concurrent
 import           Control.Exception.Safe
 import           Data.Bits
@@ -23,6 +20,7 @@ import           Foreign.Storable
 import           "gl" Graphics.GL
 import           Graphics.UI.GLFW       as GLFW
 import           Prelude                hiding (init)
+import           Protolude
 import           Quine.Debug
 import           Quine.GL.Error
 

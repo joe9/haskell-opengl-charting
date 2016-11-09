@@ -1,123 +1,117 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-
-{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PackageImports    #-}
 
 module Drawable where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
-import Protolude
-import Data.Colour
-import Control.Monad
-import Control.Monad.Trans.Cont
-import Data.IORef
-import qualified Data.Vector.Unboxed as VU
-import "gl" Graphics.GL
-import Graphics.UI.GLFW as GLFW
-import Prelude hiding (init)
-import Data.Int
+import           Control.Monad
+import           Control.Monad.Trans.Cont
+import           Data.Colour
+import           Data.Int
+import           Data.IORef
+import qualified Data.Vector.Unboxed      as VU
+import           "gl" Graphics.GL
+import           Graphics.UI.GLFW         as GLFW
+import           Prelude                  hiding (init)
+import           Protolude
+
 --
-import Scale
-import Types
 import GLFWHelpers
 import OpenGLHelpers
+import Scale
+import Types
 
 data Value
-    = ValueCursorPosition Double
-                          Double
-    | ValueDimensions Width
-                      Height
-    | ValueInt Int
-    | ValueAsOf Int64
-    | ValueInteger Integer
-    | ValueEmpty
-    deriving (Eq)
+  = ValueCursorPosition Double
+                        Double
+  | ValueDimensions Width
+                    Height
+  | ValueInt Int
+  | ValueAsOf Int64
+  | ValueInteger Integer
+  | ValueEmpty
+  deriving (Eq)
 
 data DrawableType
-    = Screen
-    | Frame
-    | PriceChart
-    | VolumeChart
-    | HorizontalCrosshair
-    | VerticalCrosshair
-    deriving (Show)
+  = Screen
+  | Frame
+  | PriceChart
+  | VolumeChart
+  | HorizontalCrosshair
+  | VerticalCrosshair
+  deriving (Show)
 
 data Drawable = Drawable
-    { dPreviousValue :: Maybe Value
-    , dCurrentValue :: State -> VU.Vector PriceData -> Value
-    , dLoadBufferAndBuildDrawFunction :: State -> VU.Vector PriceData -> Scale -> Scale -> Scale -> Drawable -> IO (IO ())
-    , dDraw :: IO ()
-    , dVertexArrayId :: VertexArrayId
-    , dBufferId :: BufferId
-    , dColour :: Colour Double
-    , dTransparency :: Maybe Double
-    , dType :: DrawableType
-    }
+  { dPreviousValue :: Maybe Value
+  , dCurrentValue :: State -> VU.Vector PriceData -> Value
+  , dLoadBufferAndBuildDrawFunction :: State -> VU.Vector PriceData -> Scale -> Scale -> Scale -> Drawable -> IO (IO ())
+  , dDraw :: IO ()
+  , dVertexArrayId :: VertexArrayId
+  , dBufferId :: BufferId
+  , dColour :: Colour Double
+  , dTransparency :: Maybe Double
+  , dType :: DrawableType
+  }
 
 renderDrawables
-    :: Env
-    -> State
-    -> [Drawable]
-    -> (VU.Vector PriceData, Scale, Scale, Scale)
-    -> IO [Drawable]
-renderDrawables env state ds dataSeries@(series,_,_,_) = do
-    let win = envWindow env
-        colorUniformLocation = envColorUniformLocation env
-    putStrLn "renderDrawables called"
-    if (any
-            (\d ->
-                  Just (dCurrentValue d state series) /= dPreviousValue d)
-            ds)
-        then do
-            newds <-
-                mapM (\d -> renderDrawable win colorUniformLocation state d dataSeries) ds
-            GLFW.swapBuffers win
-            glFlush  -- not necessary, but someone recommended it
-            return newds
-        else return ds
+  :: Env
+  -> State
+  -> [Drawable]
+  -> (VU.Vector PriceData, Scale, Scale, Scale)
+  -> IO [Drawable]
+renderDrawables env state ds dataSeries@(series, _, _, _) = do
+  let win = envWindow env
+      colorUniformLocation = envColorUniformLocation env
+  putStrLn "renderDrawables called"
+  if (any (\d -> Just (dCurrentValue d state series) /= dPreviousValue d) ds)
+    then do
+      newds <-
+        mapM
+          (\d -> renderDrawable win colorUniformLocation state d dataSeries)
+          ds
+      GLFW.swapBuffers win
+      glFlush -- not necessary, but someone recommended it
+      return newds
+    else return ds
 
 renderDrawable
-    :: Window
-    -> ColorUniformLocation
-    -> State
-    -> Drawable
-    -> (VU.Vector PriceData, Scale, Scale, Scale)
-    -> IO Drawable
-renderDrawable win colorUniformLocation state drawable (series,xscale,pricescale,volumescale) = do
-    let justDraw =
-            (\d -> do
-                 drawUsingVertexArray
-                     win
-                     colorUniformLocation
-                     (dVertexArrayId d)
-                     (dColour d)
-                     (dTransparency d)
-                     (dDraw d)
-                 return d)
-    let newValue = dCurrentValue drawable state series
-    if (Just newValue /= dPreviousValue drawable)
-        then do
-            putStrLn
-                ("renderDrawable called - loading buffer and drawing of " ++
-                 show (dType drawable))
-            -- With OpenGL, the coordinates should be in the range (-1, 1)
-            drawFunction <-
-                (dLoadBufferAndBuildDrawFunction drawable)
-                    state
-                    series
-                    xscale
-                    pricescale
-                    volumescale
-                    drawable
-            justDraw
-                (drawable
-                 { dDraw = drawFunction
-                 , dPreviousValue = Just newValue
-                 })
-        else do
-            putStrLn
-                ("renderDrawable called - drawing " ++ show (dType drawable))
-            justDraw drawable
+  :: Window
+  -> ColorUniformLocation
+  -> State
+  -> Drawable
+  -> (VU.Vector PriceData, Scale, Scale, Scale)
+  -> IO Drawable
+renderDrawable win colorUniformLocation state drawable (series, xscale, pricescale, volumescale) = do
+  let justDraw =
+        (\d -> do
+           drawUsingVertexArray
+             win
+             colorUniformLocation
+             (dVertexArrayId d)
+             (dColour d)
+             (dTransparency d)
+             (dDraw d)
+           return d)
+  let newValue = dCurrentValue drawable state series
+  if (Just newValue /= dPreviousValue drawable)
+    then do
+      putStrLn
+        ("renderDrawable called - loading buffer and drawing of " ++
+         show (dType drawable))
+      -- With OpenGL, the coordinates should be in the range (-1, 1)
+      drawFunction <-
+        (dLoadBufferAndBuildDrawFunction drawable)
+          state
+          series
+          xscale
+          pricescale
+          volumescale
+          drawable
+      justDraw (drawable {dDraw = drawFunction, dPreviousValue = Just newValue})
+    else do
+      putStrLn ("renderDrawable called - drawing " ++ show (dType drawable))
+      justDraw drawable
 
 -- could use the ContT monad. but, this is more readable
 --  https://github.com/glguy/irc-core/blob/v2/src/Client/CApi.hs#L146-L158
@@ -155,8 +149,6 @@ renderDrawable win colorUniformLocation state drawable (series,xscale,pricescale
 --                                                     , verticalCrosshairDrawable
 --                                                           vcvaid
 --                                                           vcvabid]
-
-
 -- the above can be refactored to
 --   https://wiki.haskell.org/MonadCont_under_the_hood
 -- continuation takes a function and applies it within it's context
@@ -171,7 +163,6 @@ renderDrawable win colorUniformLocation state drawable (series,xscale,pricescale
 -- runCont is how the continuation is completed. i.e., take the
 --    function needed for the Cont b a, run Cont b a with the function
 --    (a -> b) as the argument and and return the b
-
 -- <ski> joe9 : the point is to execute multiple `ContT withBlah' actions in a row
 -- <joe9> ski, but, how does chaining continuations work with replicateM work? replicateM just duplicates objects (in this case, continuation objects). T
 -- <joe9> ski, oh, Ok. Thanks.
@@ -324,17 +315,18 @@ renderDrawable win colorUniformLocation state drawable (series,xscale,pricescale
 -- <joe9> ski, ok. Thanks a lot.  [14:31]
 -- <ski> the continuation passed for the `ContT' version would only be visible if you expand `(>>=)' (or `(<*>)', in case of `traverse')  [14:32]
 -- <ski> (i assume that by "continuation bind function" you meant that continuation .. sometimes the right argument to `(>>=)' is also referred to as a continuation, though ..)
-
 -- the above can be refactored to
 -- <ski>   replicateM 6 (ContT (withVertexArray . curry)) `runContT` \[(svaid,svabid),(fvaid,fvabid),(pvaid,pvabid),(vvaid,vvabid),(hcvaid,hcvabid),(vcvaid,vcvabid)] ->
 --       continueFunction [..as before..]  [10:59]
 -- <ski> alternatively
 -- <ski>   replicateM 6 (ContT (withVertexArray . curry)) `runContT` (continueFunction . zipWith uncurry
 --       [screenDrawable,frameDrawable,priceChartDrawable,volumeChartDrawable,horizontalCrosshairDrawable,verticalCrosshairDrawable])
-withInitializedDrawables :: [(VertexArrayId -> BufferId -> Drawable)] -> ([Drawable] -> IO b) ->  IO b
+withInitializedDrawables :: [(VertexArrayId -> BufferId -> Drawable)]
+                         -> ([Drawable] -> IO b)
+                         -> IO b
 withInitializedDrawables dfs continueFunction =
-  runContT (replicateM (length dfs) (ContT (withVertexArray . curry)))
-  -- the above ContT b IO [(VertexArrayId,BufferId)] needs a
-  --   function of type [(VertexArrayId,BufferId)] -> IO b to complete
-           (continueFunction . zipWith uncurry dfs)
-
+  runContT
+    (replicateM (length dfs) (ContT (withVertexArray . curry)))
+    -- the above ContT b IO [(VertexArrayId,BufferId)] needs a
+    --   function of type [(VertexArrayId,BufferId)] -> IO b to complete
+    (continueFunction . zipWith uncurry dfs)

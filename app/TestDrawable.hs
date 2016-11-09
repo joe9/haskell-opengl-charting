@@ -1,8 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE NoImplicitPrelude         #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE PackageImports            #-}
@@ -12,12 +10,12 @@
 module Main where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
-import Protolude
 import           Control.Concurrent
 import qualified Data.Vector.Storable as VS
 import           "gl" Graphics.GL
 import           Graphics.UI.GLFW     as GLFW
 import           Prelude              hiding (init)
+import           Protolude
 
 --
 import Drawable

@@ -1,60 +1,59 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-
-{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PackageImports    #-}
 
 module Drawable.PriceAreaGraph
-  (priceChartDrawable)
-  where
+  ( priceChartDrawable
+  ) where
 
-import Protolude
-import Data.Colour.Names
-import qualified Data.Vector.Unboxed as VU
+import           Data.Colour.Names
 import qualified Data.Vector.Storable as VS
-import "gl" Graphics.GL
+import qualified Data.Vector.Unboxed  as VU
+import           "gl" Graphics.GL
+import           Protolude
+
 --
+import Drawable
 import OpenGLHelpers
 import Scale
-import Drawable
 import Types
 
 priceChartDrawable :: VertexArrayId -> BufferId -> Drawable
 priceChartDrawable vaId bId =
-    Drawable
-    { dDraw = return ()
-    , dLoadBufferAndBuildDrawFunction = \_ dataSeries scalex scaleprice _ d -> do
-          let vertices = priceBufferData scalex scaleprice dataSeries
-          loadBuffer (dBufferId d) vertices
-          return
-              (glDrawArrays
-                   GL_TRIANGLE_STRIP
-                   0
-                   (div (fromIntegral (VS.length vertices)) 2))
-    , dPreviousValue = Nothing
-    , dCurrentValue = \_ ->
-                           ValueAsOf . asof . VU.last
-    , dVertexArrayId = vaId
-    , dBufferId = bId
-    , dColour = lightpink
-    , dTransparency = Nothing
-    , dType = PriceChart
-    }
+  Drawable
+  { dDraw = return ()
+  , dLoadBufferAndBuildDrawFunction =
+      \_ dataSeries scalex scaleprice _ d -> do
+        let vertices = priceBufferData scalex scaleprice dataSeries
+        loadBuffer (dBufferId d) vertices
+        return
+          (glDrawArrays
+             GL_TRIANGLE_STRIP
+             0
+             (div (fromIntegral (VS.length vertices)) 2))
+  , dPreviousValue = Nothing
+  , dCurrentValue = \_ -> ValueAsOf . asof . VU.last
+  , dVertexArrayId = vaId
+  , dBufferId = bId
+  , dColour = lightpink
+  , dTransparency = Nothing
+  , dType = PriceChart
+  }
 
 -- TODO dots
 --   Pictures ([areaBetweenBidAndAsk areaVertices] <> map dot scaledBids <>
 --             map dot scaledAsks)
-priceGraph
-    :: Scale -> Scale -> VU.Vector PriceData -> Picture
+priceGraph :: Scale -> Scale -> VU.Vector PriceData -> Picture
 priceGraph scalex scaley dataSeries =
-    Picture scaledPrices GL_TRIANGLE_STRIP lightpink Nothing
+  Picture scaledPrices GL_TRIANGLE_STRIP lightpink Nothing
   where
     scaledPrices =
-        (VU.convert . VU.concatMap (scaledPrice scalex scaley) . VU.indexed)
-            dataSeries
+      (VU.convert . VU.concatMap (scaledPrice scalex scaley) . VU.indexed)
+        dataSeries
 
 priceBufferData :: Scale -> Scale -> VU.Vector PriceData -> VS.Vector Float
 priceBufferData scalex scaley =
-    VU.convert . VU.concatMap (scaledPrice scalex scaley) . VU.indexed
+  VU.convert . VU.concatMap (scaledPrice scalex scaley) . VU.indexed
 
 -- scaledPriceOld
 --   :: (Scale x
@@ -70,14 +69,14 @@ priceBufferData scalex scaley =
 --         a = ask d
 --   where scaledPrices = (VS.concatMap v2ToVertex . VU.convert . VU.concatMap (scaledPriceOld xScale yScale) . VU.indexed) dataSeries
 -- Scale from the domain (input data range) to the range (absolute coordinate).
-scaledPrice
-    :: Scale -> Scale -> (Int, PriceData) -> VU.Vector Float
-scaledPrice scalex scaley (x,d) =
-    VU.fromList
-        [ (realToFrac . sToRange scalex scalex . fromIntegral) x
-        , (realToFrac . (sToRange scaley) scaley) b
-        , (realToFrac . sToRange scalex scalex . fromIntegral) x
-        , (realToFrac . (sToRange scaley) scaley) a]
+scaledPrice :: Scale -> Scale -> (Int, PriceData) -> VU.Vector Float
+scaledPrice scalex scaley (x, d) =
+  VU.fromList
+    [ (realToFrac . sToRange scalex scalex . fromIntegral) x
+    , (realToFrac . (sToRange scaley) scaley) b
+    , (realToFrac . sToRange scalex scalex . fromIntegral) x
+    , (realToFrac . (sToRange scaley) scaley) a
+    ]
   where
     b = bid d
     a = ask d

@@ -1,21 +1,23 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-
-
-{-# LANGUAGE PackageImports         #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PackageImports    #-}
 
 module GLException
-  (GLException(..))
-  where
+  ( GLException(..)
+  ) where
 
-import Protolude
 import Control.Exception.Safe
+import Protolude
 import Quine.GL.Error
 
 data GLException
-  = ShaderProgramCompilationFailed String String String [Error]
-  | ProgramCompilationFailed String [Error]
+  = ShaderProgramCompilationFailed String
+                                   String
+                                   String
+                                   [Error]
+  | ProgramCompilationFailed String
+                             [Error]
   | GLFWInitFailed
-  deriving (Eq,Show,Typeable)
+  deriving (Eq, Show, Typeable)
 
 instance Exception GLException
