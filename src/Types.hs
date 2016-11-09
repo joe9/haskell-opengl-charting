@@ -3,6 +3,7 @@
 
 module Types where
 
+import Protolude
 import Data.Tuple.Select
 import Data.Int
 import qualified Data.Vector.Storable as VS

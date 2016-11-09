@@ -6,6 +6,7 @@
 module Drawable where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
+import Protolude
 import Data.Colour
 import Control.Monad
 import Control.Monad.Trans.Cont

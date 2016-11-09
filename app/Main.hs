@@ -7,6 +7,7 @@
 module Main where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
+import Protolude
 import Control.Concurrent.STM    (TQueue, atomically, newTQueueIO, tryReadTQueue, writeTQueue)
 import           Control.Concurrent
 import           Control.Concurrent.Async

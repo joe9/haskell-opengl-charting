@@ -5,6 +5,7 @@
 
 module BulkVerticesData where
 
+import Protolude
 import qualified Data.Vector.Storable as V
 import           "gl" Graphics.GL
 

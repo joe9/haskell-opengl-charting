@@ -12,6 +12,7 @@
 module Main where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
+import Protolude
 import           Control.Concurrent
 import qualified Data.Vector.Storable as VS
 import           "gl" Graphics.GL

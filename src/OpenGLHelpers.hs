@@ -7,6 +7,7 @@
 module OpenGLHelpers where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
+import Protolude
 import           Control.Concurrent
 import           Control.Exception.Safe
 import           Data.Bits

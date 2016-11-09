@@ -16,6 +16,7 @@ module Axis
   ,topAxis)
   where
 
+import Protolude
 import Prelude hiding (Left, Right)
 --
 import Diagrams.Prelude hiding (dot, frame)

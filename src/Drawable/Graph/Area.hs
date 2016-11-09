@@ -7,6 +7,7 @@ module Drawable.Graph.Area
   (areaDrawable)
   where
 
+import Protolude
 import Data.Colour.Names
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Storable as VS

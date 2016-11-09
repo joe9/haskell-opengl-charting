@@ -8,6 +8,7 @@ module GLFWHelpers where
 
 --------------------------------------------------------------------------------
 
+import Protolude
 import Control.Concurrent.STM    (TQueue, atomically, newTQueueIO, tryReadTQueue, writeTQueue)
 import Control.Concurrent
 import Control.Exception.Safe

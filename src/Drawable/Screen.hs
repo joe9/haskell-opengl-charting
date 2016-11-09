@@ -6,6 +6,7 @@
 module Drawable.Screen where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
+import Protolude
 import Data.Bits
 import Data.Colour.Names
 import "gl" Graphics.GL

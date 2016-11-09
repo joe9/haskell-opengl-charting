@@ -3,6 +3,7 @@
 
 module TestData where
 
+import Protolude
 import           Control.Monad
 import           Data.Time.Clock.POSIX
 import           Data.Int

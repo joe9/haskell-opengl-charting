@@ -3,6 +3,7 @@
 
 module Scale where
 
+import Protolude
 import qualified Data.Vector.Unboxed as VU
 
 -- deinterpolate(a, b)(x) takes a domain value x in [a,b] and returns the corresponding parameter t in [0,1].

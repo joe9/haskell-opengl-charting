@@ -5,6 +5,7 @@ module Main (main) where
 
 --------------------------------------------------------------------------------
 
+import Protolude
 import Control.Concurrent.STM    (TQueue, atomically, newTQueueIO, tryReadTQueue, writeTQueue)
 import Control.Monad             (unless, when, void)
 import Control.Monad.RWS.Strict  (RWST, ask, asks, evalRWST, get, liftIO, modify, put)

@@ -8,6 +8,7 @@ module GLException
   (GLException(..))
   where
 
+import Protolude
 import Control.Exception.Safe
 import Quine.GL.Error
 

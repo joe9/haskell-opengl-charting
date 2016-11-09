@@ -7,6 +7,7 @@ module Gear
 
 --------------------------------------------------------------------------------
 
+import Protolude
 import Control.Monad (forM_, when)
 
 import qualified Graphics.Rendering.OpenGL as GL

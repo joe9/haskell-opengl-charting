@@ -5,6 +5,7 @@
 
 module Drawable.Frame where
 
+import Protolude
 import Data.Colour.Names
 import qualified Data.Vector.Storable as VS
 import qualified Data.Vector.Unboxed as VU
