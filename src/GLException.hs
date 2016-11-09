@@ -11,11 +11,11 @@ import Protolude
 import Quine.GL.Error
 
 data GLException
-  = ShaderProgramCompilationFailed String
-                                   String
-                                   String
+  = ShaderProgramCompilationFailed Text
+                                   Text
+                                   Text
                                    [Error]
-  | ProgramCompilationFailed String
+  | ProgramCompilationFailed Text
                              [Error]
   | GLFWInitFailed
   deriving (Eq, Show, Typeable)

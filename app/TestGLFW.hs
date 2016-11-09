@@ -1,5 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts  #-}
 
 module Main
   ( main
@@ -14,8 +15,11 @@ import Control.Monad.RWS.Strict  (RWST, ask, asks, evalRWST, get,
 import Control.Monad.Trans.Maybe (MaybeT (..), runMaybeT)
 import Data.List                 (intercalate)
 import Data.Maybe                (catMaybes)
-import Protolude
-import Text.PrettyPrint
+import Data.Text                 (unwords)
+import Data.String.Conversions (cs)
+import Protolude hiding (State, bracket)
+import Text.PrettyPrint hiding ((<>))
+import qualified Text.PrettyPrint as PP
 
 import qualified Graphics.Rendering.OpenGL as GL
 import qualified Graphics.UI.GLFW          as GLFW
@@ -54,7 +58,7 @@ type Demo = RWST Env () State IO
 --------------------------------------------------------------------------------
 data Event
   = EventError !GLFW.Error
-               !String
+               !Text
   | EventWindowPos !GLFW.Window
                    !Int
                    !Int
@@ -107,7 +111,7 @@ main = do
       height = 480
   eventsChan <- newTQueueIO :: IO (TQueue Event)
   withWindow width height "GLFW-b-demo" $ \win -> do
-    GLFW.setErrorCallback $ Just $ errorCallback eventsChan
+    GLFW.setErrorCallback $ Just $ (\e s -> errorCallback eventsChan e (cs s))
     GLFW.setWindowPosCallback win $ Just $ windowPosCallback eventsChan
     GLFW.setWindowSizeCallback win $ Just $ windowSizeCallback eventsChan
     GLFW.setWindowCloseCallback win $ Just $ windowCloseCallback eventsChan
@@ -137,13 +141,13 @@ main = do
     major <- GLFW.getWindowContextVersionMajor win
     minor <- GLFW.getWindowContextVersionMinor win
     revision <- GLFW.getWindowContextVersionRevision win
-    putStrLn
-      ("OpenGL version recieved: " ++
-       show major ++ "," ++ show minor ++ "," ++ show revision)
+    putText
+      ("OpenGL version recieved: " <>
+       show major <> "," <> show minor <> "," <> show revision)
     version <- GLFW.getVersion
-    putStrLn ("Supported GLFW Version is: " ++ show version)
+    putText ("Supported GLFW Version is: " <> show version)
     versionString <- GLFW.getVersionString
-    putStrLn ("Supported GLFW Version String is: " ++ show versionString)
+    putText ("Supported GLFW Version String is: " <> show versionString)
     let zDistClosest = 10
         zDistFarthest = zDistClosest + 20
         zDist = zDistClosest + ((zDistFarthest - zDistClosest) / 2)
@@ -174,7 +178,7 @@ main = do
           , stateDragStartYAngle = 0
           }
     runDemo env state
-  putStrLn "ended!"
+  putText "ended!"
 
 --         c'glfwSetCharModsCallback        win $ Just $ charModsCallback        eventsChan
 --         GLFW.setDropCallback            win $ Just $ dropCallback            eventsChan
@@ -184,12 +188,12 @@ main = do
 -- GLFW-b is made to be very close to the C API, so creating a window is pretty
 -- clunky by Haskell standards. A higher-level API would have some function
 -- like withWindow.
-withWindow :: Int -> Int -> String -> (GLFW.Window -> IO ()) -> IO ()
+withWindow :: Int -> Int -> Text -> (GLFW.Window -> IO ()) -> IO ()
 withWindow width height title f = do
   GLFW.setErrorCallback $ Just simpleErrorCallback
   r <- GLFW.init
   when r $ do
-    m <- GLFW.createWindow width height title Nothing Nothing
+    m <- GLFW.createWindow width height (cs title) Nothing Nothing
     case m of
       (Just win) -> do
         GLFW.makeContextCurrent m
@@ -199,12 +203,12 @@ withWindow width height title f = do
       Nothing -> return ()
     GLFW.terminate
   where
-    simpleErrorCallback e s = putStrLn $ unwords [show e, show s]
+    simpleErrorCallback e s = putText $ unwords [show e, show s]
 
 --------------------------------------------------------------------------------
 -- Each callback does just one thing: write an appropriate Event to the events
 -- TQueue.
-errorCallback :: TQueue Event -> GLFW.Error -> String -> IO ()
+errorCallback :: TQueue Event -> GLFW.Error -> Text -> IO ()
 windowPosCallback :: TQueue Event -> GLFW.Window -> Int -> Int -> IO ()
 windowSizeCallback :: TQueue Event -> GLFW.Window -> Int -> Int -> IO ()
 windowCloseCallback :: TQueue Event -> GLFW.Window -> IO ()
@@ -501,7 +505,7 @@ isPress _                       = False
 --------------------------------------------------------------------------------
 printInstructions :: IO ()
 printInstructions =
-  putStrLn $
+  putText . cs $
   render $
   nest
     4
@@ -528,7 +532,7 @@ printInformation win = do
   forwardCompat <- GLFW.getWindowOpenGLForwardCompat win
   debug <- GLFW.getWindowOpenGLDebugContext win
   profile <- GLFW.getWindowOpenGLProfile win
-  putStrLn $
+  putText . cs $
     render $
     nest
       4
@@ -580,7 +584,7 @@ printInformation win = do
     renderDebug = text . show
     renderProfile = text . show
 
-type MonitorInfo = (String, (Int, Int), (Int, Int), [GLFW.VideoMode])
+type MonitorInfo = (Text, (Int, Int), (Int, Int), [GLFW.VideoMode])
 
 getMonitorInfos :: MaybeT IO [MonitorInfo]
 getMonitorInfos = getMonitors >>= mapM getMonitorInfo
@@ -595,23 +599,23 @@ getMonitorInfos = getMonitors >>= mapM getMonitorInfo
         pos <- liftIO $ GLFW.getMonitorPos mon
         size <- liftIO $ GLFW.getMonitorPhysicalSize mon
         return $ Just (name, pos, size, vms)
-    getMonitorName :: GLFW.Monitor -> MaybeT IO String
-    getMonitorName mon = MaybeT $ GLFW.getMonitorName mon
+    getMonitorName :: GLFW.Monitor -> MaybeT IO Text
+    getMonitorName mon = (MaybeT . fmap (fmap cs)) $ GLFW.getMonitorName mon
     getVideoModes :: GLFW.Monitor -> MaybeT IO [GLFW.VideoMode]
     getVideoModes mon = MaybeT $ GLFW.getVideoModes mon
 
-getJoystickNames :: IO [(GLFW.Joystick, String)]
+getJoystickNames :: IO [(GLFW.Joystick, Text)]
 getJoystickNames = catMaybes `fmap` mapM getJoystick joysticks
   where
     getJoystick js =
-      fmap (maybe Nothing (\name -> Just (js, name))) (GLFW.getJoystickName js)
+      fmap (maybe Nothing (\name -> Just (js, cs name))) (GLFW.getJoystickName js)
 
 --------------------------------------------------------------------------------
-printEvent :: String -> [String] -> Demo ()
-printEvent cbname fields = liftIO $ putStrLn $ cbname ++ ": " ++ unwords fields
+printEvent :: Text -> [Text] -> Demo ()
+printEvent cbname fields = liftIO $ putText $ cbname <> ": " <> unwords fields
 
-showModifierKeys :: GLFW.ModifierKeys -> String
-showModifierKeys mk = "[mod keys: " ++ keys ++ "]"
+showModifierKeys :: GLFW.ModifierKeys -> Text
+showModifierKeys mk = "[mod keys: " <> keys <> "]"
   where
     keys =
       if null xs

@@ -19,11 +19,9 @@ import qualified Data.Vector.Storable     as VS
 import qualified Data.Vector.Unboxed      as VU
 import           "gl" Graphics.GL
 import           Graphics.UI.GLFW         as GLFW
-import           Prelude                  hiding (init)
-import           Protolude
+import           Protolude hiding (State)
 import           System.Random
 
---
 import Chart
 import Drawable
 import Drawable.Frame
@@ -49,9 +47,9 @@ import Types
 -- --   do a <- asyncBound window
 -- --      b <- asyncBound window
 -- --      wait a
--- --      putStrLn "first window closed"
+-- --      putText "first window closed"
 -- --      wait b
--- --      putStrLn "second window closed"
+-- --      putText "second window closed"
 -- --      threadDelay (1 * 1000 * 1000)
 main :: IO ()
 main = do
@@ -60,10 +58,10 @@ main = do
   let xscale = xScale dataSeries
       pricescale = priceScale dataSeries
       volumescale = volumeScale dataSeries
-  putStrLn ("dataSeries: " ++ show dataSeries)
-  --      putStrLn ("xScale: " ++ show xscale)
-  --      putStrLn ("pricescale: " ++ show pricescale)
-  --      putStrLn ("volumeScale: " ++ show volumescale)
+  putText ("dataSeries: " <> show dataSeries)
+  --      putText ("xScale: " <> show xscale)
+  --      putText ("pricescale: " <> show pricescale)
+  --      putText ("volumeScale: " <> show volumescale)
   ref <- newIORef (dataSeries, xscale, pricescale, volumescale)
   a <-
     async
@@ -97,7 +95,7 @@ run ref env state ds
                   -- TODO bug: on empty event, should updated the chart with new data
  = do
   GLFW.waitEvents
-  putStr "Received GLFW event: "
+  putText "Received GLFW event: "
   ustate <- processEvents env state
   q <- GLFW.windowShouldClose (envWindow env)
   unless

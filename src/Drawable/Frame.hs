@@ -8,9 +8,8 @@ import           Data.Colour.Names
 import qualified Data.Vector.Storable as VS
 import qualified Data.Vector.Unboxed  as VU
 import           "gl" Graphics.GL
-import           Protolude
+import           Protolude hiding (State)
 
---
 import Drawable
 import GLFWHelpers
 import OpenGLHelpers
@@ -29,7 +28,7 @@ drawFrameFunction _ _ _ _ _ d = do
   let vertices =
         VS.fromList [-0.99, -0.99, -0.99, 0.99, 0.99, 0.99, 0.99, -0.99]
   loadBuffer (dBufferId d) vertices
-  putStrLn ("frame vertices are: " ++ show vertices)
+  putText ("frame vertices are: " <> show vertices)
   return
     (glDrawArrays GL_LINE_LOOP 0 (div (fromIntegral (VS.length vertices)) 2))
 

@@ -8,19 +8,20 @@ module OpenGLHelpers where
 import           Control.Concurrent
 import           Control.Exception.Safe
 import           Data.Bits
-import qualified Data.ByteString        as BS
+import qualified Data.ByteString         as BS
 import           Data.Colour.SRGB
 import           Data.Maybe
-import qualified Data.Vector.Storable   as VS
+import           Data.String.Conversions (cs)
+import qualified Data.Vector.Storable    as VS
 import           Foreign.C.String
 import           Foreign.Marshal.Alloc
 import           Foreign.Marshal.Array
 import           Foreign.Ptr
 import           Foreign.Storable
 import           "gl" Graphics.GL
-import           Graphics.UI.GLFW       as GLFW
-import           Prelude                hiding (init)
-import           Protolude
+import           Graphics.UI.GLFW        as GLFW
+import           Protolude               hiding (bracket,
+                                          bracketOnError, bracket_)
 import           Quine.Debug
 import           Quine.GL.Error
 
@@ -84,8 +85,8 @@ loadColor colorUniformLocation r g b t =
 -- https://github.com/ekmett/vr/blob/master/timer.h
 --      previousmt <- GLFW.getTime
 --      mt <- GLFW.getTime
---      putStrLn ("time taken to draw: " ++
---                         show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++
+--      putText ("time taken to draw: " <>
+--                         show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) <>
 --                         " milliseconds")
 drawUsingVertexArray
   :: Window
@@ -98,14 +99,14 @@ drawUsingVertexArray
 drawUsingVertexArray _ colorUniformLocation vertexArrayId color maybet f = do
   let (r, g, b) = rgb color
   loadColor colorUniformLocation r g b (doubleToGLfloat (fromMaybe 1 maybet))
-  putStrLn ("drawing buffer: vertex array id: " ++ show vertexArrayId)
+  putText ("drawing buffer: vertex array id: " <> show vertexArrayId)
   usingVertexArray vertexArrayId f
 
 --     usingVertexArray vertexArrayId (glDrawArrays GL_LINES 0 2)
 --      writeFile "/tmp/temp-haskell-data" (show v2s)
---   putStrLn ("size of float is: " ++ show ((sizeOf (undefined :: GLfloat))))
---   putStrLn ("loading number of elements: " ++ show ((sizeOf (undefined :: GLfloat) * V.length bufferData)))
---   putStrLn ("loading elements: " ++ show bufferData)
+--   putText ("size of float is: " <> show ((sizeOf (undefined :: GLfloat))))
+--   putText ("loading number of elements: " <> show ((sizeOf (undefined :: GLfloat) * V.length bufferData)))
+--   putText ("loading elements: " <> show bufferData)
 -- http://stackoverflow.com/a/11700577
 -- VAO here is like a profile that contains a lot of properties
 --   (imagine a smart device profile). Instead of changing color,
@@ -125,13 +126,13 @@ loadBuffer :: BufferId -> VS.Vector GLfloat -> IO ()
 loadBuffer bufferId bufferData =
   let size = fromIntegral (sizeOf (undefined :: GLfloat) * VS.length bufferData)
   in do checkGLErrors (glBindBuffer GL_ARRAY_BUFFER bufferId)
-        putStrLn ("loading buffer: vertex array id: " ++ show bufferId)
+        putText ("loading buffer: vertex array id: " <> show bufferId)
         VS.unsafeWith
           bufferData
           (\ptr ->
              checkGLErrors
                (glBufferData GL_ARRAY_BUFFER size (castPtr ptr) GL_STREAM_DRAW))
-        putStrLn ("loadBuffer completed" ++ show bufferData)
+        putText ("loadBuffer completed" <> show bufferData)
 
 -- basic function for debugging
 justDrawThis
@@ -151,13 +152,13 @@ justDrawThis window colorUniformLocation vertices noOfElementsToDraw drawType r 
   glClearColor 0.05 0.05 0.05 1
   glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
   loadColor colorUniformLocation r g b t
-  putStrLn
-    ("justDrawThis: size of float is: " ++ show (sizeOf (undefined :: GLfloat)))
-  putStrLn ("justDrawThis: length of vertices: " ++ show (VS.length vertices))
-  putStrLn
-    ("justDrawThis: loading number of bytes: " ++
+  putText
+    ("justDrawThis: size of float is: " <> show (sizeOf (undefined :: GLfloat)))
+  putText ("justDrawThis: length of vertices: " <> show (VS.length vertices))
+  putText
+    ("justDrawThis: loading number of bytes: " <>
      show (sizeOf (undefined :: GLfloat) * VS.length vertices))
-  putStrLn ("justDrawThis: loading elements: " ++ show vertices)
+  putText ("justDrawThis: loading elements: " <> show vertices)
   loadBuffer bufferId vertices
   --     checkGLErrors (glBindVertexArray vertexArrayId)
   --     let size =
@@ -171,11 +172,11 @@ justDrawThis window colorUniformLocation vertices noOfElementsToDraw drawType r 
   --                        size
   --                        (castPtr ptr)
   --                        GL_STREAM_DRAW))
-  putStrLn
-    ("justDrawThis: draw this many vertices: " ++
+  putText
+    ("justDrawThis: draw this many vertices: " <>
      show (div (fromIntegral (VS.length vertices)) 2 :: Int))
-  putStrLn
-    ("justDrawThis: draw this many vertices: " ++
+  putText
+    ("justDrawThis: draw this many vertices: " <>
      show (fromIntegral (div (VS.length vertices) 2) :: Int))
   glDrawArrays drawType 0 (fromIntegral noOfElementsToDraw)
   --     glDrawArrays GL_TRIANGLE_STRIP 0 4
@@ -299,9 +300,9 @@ withProgram f =
                          GL_INFO_LOG_LENGTH
                          infoLogLengthPtr
                        peek infoLogLengthPtr)
-                putStrLn ("infoLogLength: " ++ show infoLogLength)
+                putText ("infoLogLength: " <> show infoLogLength)
                 infoLog <- getProgramInfoLog programId infoLogLength
-                putStrLn ("infoLog: " ++ infoLog)
+                putText ("infoLog: " <> infoLog)
                 if linkStatus == GL_TRUE
                   then checkGLErrors (glUseProgram programId)
                   else errors >>= throw . ProgramCompilationFailed infoLog))
@@ -318,22 +319,22 @@ withProgram f =
 --   termination character
 type InfoLogLength = GLsizei
 
-getProgramInfoLog :: ProgramId -> InfoLogLength -> IO String
+getProgramInfoLog :: ProgramId -> InfoLogLength -> IO Text
 getProgramInfoLog programId infoLogLength
   | infoLogLength > 1 =
     alloca
       (\infoLogPtr -> do
          glGetProgramInfoLog programId infoLogLength nullPtr infoLogPtr
-         peekCString infoLogPtr)
+         ((fmap cs . peekCString) infoLogPtr))
   | otherwise = return "No Info Log"
 
-getShaderInfoLog :: ShaderId -> InfoLogLength -> IO String
+getShaderInfoLog :: ShaderId -> InfoLogLength -> IO Text
 getShaderInfoLog shaderId infoLogLength
   | infoLogLength > 1 =
     alloca
       (\infoLogPtr -> do
          glGetShaderInfoLog shaderId infoLogLength nullPtr infoLogPtr
-         peekCString infoLogPtr)
+         ((fmap cs . peekCString) infoLogPtr))
   | otherwise = return "No Info Log"
 
 -- sticking to using the raw gl calls as I can be sure where something
@@ -373,17 +374,17 @@ getShaderId shaderType shaderSource =
               (\compileStatusPtr -> do
                  glGetShaderiv shaderId GL_COMPILE_STATUS compileStatusPtr
                  peek compileStatusPtr)
-          putStrLn ("compileStatus: " ++ show compileStatus)
+          putText ("compileStatus: " <> show compileStatus)
           threadDelay (1 * 1000 * 1000)
           infoLogLength <-
             alloca
               (\infoLogLengthPtr -> do
                  glGetShaderiv shaderId GL_INFO_LOG_LENGTH infoLogLengthPtr
                  peek infoLogLengthPtr)
-          putStrLn ("infoLogLength: " ++ show infoLogLength)
-          putStrLn ("infoLogLength: " ++ show infoLogLength)
+          putText ("infoLogLength: " <> show infoLogLength)
+          putText ("infoLogLength: " <> show infoLogLength)
           infoLog <- getShaderInfoLog shaderId infoLogLength
-          putStrLn ("infoLog: " ++ infoLog)
+          putText ("infoLog: " <> infoLog)
           if compileStatus == GL_TRUE
             then return shaderId
             else errors >>=
@@ -391,7 +392,7 @@ getShaderId shaderType shaderSource =
                  ShaderProgramCompilationFailed
                    (show shaderType)
                    (show shaderSource)
-                   infoLog)
+                   (cs infoLog))
 
 -- according to the docs, this should be a loop checking until there
 -- are no errors
@@ -406,5 +407,5 @@ getIntegerv e =
        glGetIntegerv e valuePtr
        peek valuePtr)
 
-getString :: GLenum -> IO String
-getString e = glGetString e >>= peekCString . castPtr
+getText :: GLenum -> IO Text
+getText e = glGetString e >>= fmap cs . peekCString . castPtr

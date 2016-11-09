@@ -13,10 +13,8 @@ import           Data.IORef
 import qualified Data.Vector.Unboxed      as VU
 import           "gl" Graphics.GL
 import           Graphics.UI.GLFW         as GLFW
-import           Prelude                  hiding (init)
-import           Protolude
+import           Protolude hiding (State, ask)
 
---
 import GLFWHelpers
 import OpenGLHelpers
 import Scale
@@ -63,7 +61,7 @@ renderDrawables
 renderDrawables env state ds dataSeries@(series, _, _, _) = do
   let win = envWindow env
       colorUniformLocation = envColorUniformLocation env
-  putStrLn "renderDrawables called"
+  putText "renderDrawables called"
   if (any (\d -> Just (dCurrentValue d state series) /= dPreviousValue d) ds)
     then do
       newds <-
@@ -96,8 +94,8 @@ renderDrawable win colorUniformLocation state drawable (series, xscale, pricesca
   let newValue = dCurrentValue drawable state series
   if (Just newValue /= dPreviousValue drawable)
     then do
-      putStrLn
-        ("renderDrawable called - loading buffer and drawing of " ++
+      putText
+        ("renderDrawable called - loading buffer and drawing of " <>
          show (dType drawable))
       -- With OpenGL, the coordinates should be in the range (-1, 1)
       drawFunction <-
@@ -110,7 +108,7 @@ renderDrawable win colorUniformLocation state drawable (series, xscale, pricesca
           drawable
       justDraw (drawable {dDraw = drawFunction, dPreviousValue = Just newValue})
     else do
-      putStrLn ("renderDrawable called - drawing " ++ show (dType drawable))
+      putText ("renderDrawable called - drawing " <> show (dType drawable))
       justDraw drawable
 
 -- could use the ContT monad. but, this is more readable

@@ -15,20 +15,19 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Lib
-                     , Types
-                     , Scale
-                     , GLException
-                     , GLFWHelpers
-                     , OpenGLHelpers
-                     , Drawable
-                     , Drawable.PriceAreaGraph
-                     , Drawable.VolumeBarGraph
-                     , Drawable.Screen
-                     , Drawable.Frame
-                     , Drawable.VerticalCrosshair
-                     , Drawable.HorizontalCrosshair
-                     , TestData
+  exposed-modules:  Types
+                  , Scale
+                  , GLException
+                  , GLFWHelpers
+                  , OpenGLHelpers
+                  , Drawable
+                  , Drawable.PriceAreaGraph
+                  , Drawable.VolumeBarGraph
+                  , Drawable.Screen
+                  , Drawable.Frame
+                  , Drawable.VerticalCrosshair
+                  , Drawable.HorizontalCrosshair
+                  , TestData
   build-depends:       base >= 4.7 && < 5
                      , vector
                      , tuple
@@ -47,6 +46,8 @@ library
                      , random
                      , unordered-containers
                      , protolude
+                     , string-conversions
+                     , text
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
   other-extensions:    OverloadedStrings
@@ -105,6 +106,8 @@ executable Chart
                      , time
                      , unordered-containers
                      , protolude
+                     , string-conversions
+                     , text
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
   other-extensions:    DeriveDataTypeable
@@ -155,6 +158,8 @@ executable TestDrawable
                      , time
                      , unordered-containers
                      , protolude
+                     , string-conversions
+                     , text
   default-language:    Haskell2010
   other-extensions:    DeriveDataTypeable
                      , FlexibleContexts
@@ -176,6 +181,9 @@ executable TestGLFW
                      , stm
                      , pretty
                      , bindings-GLFW >= 3.2.1.0
+                     , protolude
+                     , text
+                     , string-conversions
   default-language:    Haskell2010
   default-extensions:  NoImplicitPrelude
 

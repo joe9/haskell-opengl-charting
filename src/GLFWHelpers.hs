@@ -1,6 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports    #-}
+{-# LANGUAGE FlexibleContexts  #-}
 
 module GLFWHelpers where
 
@@ -12,12 +13,14 @@ import Control.Exception.Safe
 import Control.Monad             (unless, void, when)
 import Control.Monad.Trans.Maybe (MaybeT (..), runMaybeT)
 import Data.Bits
-import Data.List                 (intercalate)
+import Data.Text                 (unwords)
+import Data.Text.IO
 import Data.Maybe
+import Data.String.Conversions (cs)
 import "gl" Graphics.GL
-import Protolude
-import System.IO
-import Text.PrettyPrint
+import Protolude hiding (State, bracket)
+import Text.PrettyPrint hiding ((<>))
+import qualified Text.PrettyPrint as PP
 
 -- import Quine.GL.Version
 import qualified Graphics.UI.GLFW as GLFW
@@ -46,7 +49,7 @@ data State = State
 --------------------------------------------------------------------------------
 data Event
   = EventError !GLFW.Error
-               !String
+               !Text
   | EventWindowPos !GLFW.Window
                    !Int
                    !Int
@@ -155,16 +158,16 @@ withInitializedWindow continueFunction = do
 -- like withWindow.
 withWindow :: Int
            -> Int
-           -> String
+           -> Text
            -> (GLFW.Window -> ColorUniformLocation -> IO ())
            -> IO ()
 withWindow width height title f = do
   bracket
-    (GLFW.createWindow width height title Nothing Nothing)
+    (GLFW.createWindow width height (cs title) Nothing Nothing)
     (\maybeWindow ->
        GLFW.setErrorCallback (Just simpleErrorCallback) >>
        maybe (return ()) GLFW.destroyWindow maybeWindow >>
-       putStrLn "ended window!")
+       putText "ended window!")
     (maybe
        (return ())
        (\win -> do
@@ -174,31 +177,31 @@ withWindow width height title f = do
           major <- GLFW.getWindowContextVersionMajor win
           minor <- GLFW.getWindowContextVersionMinor win
           revision <- GLFW.getWindowContextVersionRevision win
-          putStrLn
-            ("OpenGL version recieved: " ++
-             show major ++ "," ++ show minor ++ "," ++ show revision)
+          putText
+            ("OpenGL version recieved: " <>
+             show major <> "," <> show minor <> "," <> show revision)
           version <- GLFW.getVersion
-          putStrLn ("Supported GLFW Version is: " ++ show version)
+          putText ("Supported GLFW Version is: " <> show version)
           versionString <- GLFW.getVersionString
-          putStrLn ("Supported GLFW Version String is: " ++ show versionString)
+          putText ("Supported GLFW Version String is: " <> show versionString)
           contextFlags <- getIntegerv GL_CONTEXT_FLAGS
-          putStrLn ("GL Context flags are: " ++ show contextFlags)
+          putText ("GL Context flags are: " <> show contextFlags)
           if contextFlags .&. GL_CONTEXT_FLAG_DEBUG_BIT == 2
-            then putStrLn "GL Debug Flag is set"
-            else putStrLn "GL Debug Flag is not set"
+            then putText "GL Debug Flag is set"
+            else putText "GL Debug Flag is not set"
           -- OpenGLHelpers.withProgram call to installDebugHook installs glDebugMessagecallback
           -- check 4-arcan-eglintro.c or glfw/tests/glfwinfo.c for more details
           checkGLErrors (glEnable GL_DEBUG_OUTPUT)
-          vendor <- checkGLErrors (getString GL_VENDOR)
-          putStrLn ("GL_VENDOR: " ++ vendor)
-          version <- checkGLErrors (getString GL_VERSION)
-          putStrLn ("GL_VENDOR: " ++ version)
-          renderer <- checkGLErrors (getString GL_RENDERER)
-          putStrLn ("GL_RENDERER: " ++ renderer)
-          --         putStrLn ("GL_VERSION: " ++ show version)
-          --         putStrLn ("Supported GLSL is %s\n", (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
-          glslversion <- checkGLErrors (getString GL_SHADING_LANGUAGE_VERSION)
-          putStrLn ("GL_SHADING_LANGUAGE_VERSION: " ++ glslversion)
+          vendor <- checkGLErrors (getText GL_VENDOR)
+          putText ("GL_VENDOR: " <> vendor)
+          version <- checkGLErrors (getText GL_VERSION)
+          putText ("GL_VENDOR: " <> version)
+          renderer <- checkGLErrors (getText GL_RENDERER)
+          putText ("GL_RENDERER: " <> renderer)
+          --         putText ("GL_VERSION: " <> show version)
+          --         putText ("Supported GLSL is %s\n", (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+          glslversion <- checkGLErrors (getText GL_SHADING_LANGUAGE_VERSION)
+          putText ("GL_SHADING_LANGUAGE_VERSION: " <> glslversion)
           withProgram
             (\programId -> colorUniformLocationInProgram programId >>= f win)))
 
@@ -213,7 +216,7 @@ simpleErrorCallback e s = hPutStrLn stderr (unwords [show e, show s])
 
 setupCallbacks :: GLFW.Window -> TQueue Event -> IO ()
 setupCallbacks win eventsChan = do
-  GLFW.setErrorCallback $ Just $ errorCallback eventsChan
+  GLFW.setErrorCallback $ Just $ (\e s -> errorCallback eventsChan e (cs s))
   GLFW.setWindowPosCallback win $ Just $ windowPosCallback eventsChan
   GLFW.setWindowSizeCallback win $ Just $ windowSizeCallback eventsChan
   GLFW.setWindowCloseCallback win $ Just $ windowCloseCallback eventsChan
@@ -235,7 +238,7 @@ setupCallbacks win eventsChan = do
 --------------------------------------------------------------------------------
 -- Each callback does just one thing: write an appropriate Event to the events
 -- TQueue.
-errorCallback :: TQueue Event -> GLFW.Error -> String -> IO ()
+errorCallback :: TQueue Event -> GLFW.Error -> Text -> IO ()
 windowPosCallback :: TQueue Event -> GLFW.Window -> Int -> Int -> IO ()
 windowSizeCallback :: TQueue Event -> GLFW.Window -> Int -> Int -> IO ()
 windowCloseCallback :: TQueue Event -> GLFW.Window -> IO ()
@@ -434,7 +437,7 @@ isPress _                       = False
 --------------------------------------------------------------------------------
 printInstructions :: IO ()
 printInstructions =
-  putStrLn $
+  putText . cs $
   render $
   nest
     4
@@ -461,7 +464,7 @@ printInformation win = do
   forwardCompat <- GLFW.getWindowOpenGLForwardCompat win
   debug <- GLFW.getWindowOpenGLDebugContext win
   profile <- GLFW.getWindowOpenGLProfile win
-  putStrLn $
+  putText . cs $
     render $
     nest
       4
@@ -513,7 +516,7 @@ printInformation win = do
     renderDebug = text . show
     renderProfile = text . show
 
-type MonitorInfo = (String, (Int, Int), (Int, Int), [GLFW.VideoMode])
+type MonitorInfo = (Text, (Int, Int), (Int, Int), [GLFW.VideoMode])
 
 getMonitorInfos :: MaybeT IO [MonitorInfo]
 getMonitorInfos = getMonitors >>= mapM getMonitorInfo
@@ -528,23 +531,23 @@ getMonitorInfos = getMonitors >>= mapM getMonitorInfo
         pos <- GLFW.getMonitorPos mon
         size <- GLFW.getMonitorPhysicalSize mon
         return $ Just (name, pos, size, vms)
-    getMonitorName :: GLFW.Monitor -> MaybeT IO String
-    getMonitorName mon = MaybeT $ GLFW.getMonitorName mon
+    getMonitorName :: GLFW.Monitor -> MaybeT IO Text
+    getMonitorName mon = (MaybeT . fmap (fmap cs)) $ GLFW.getMonitorName mon
     getVideoModes :: GLFW.Monitor -> MaybeT IO [GLFW.VideoMode]
     getVideoModes mon = MaybeT $ GLFW.getVideoModes mon
 
-getJoystickNames :: IO [(GLFW.Joystick, String)]
+getJoystickNames :: IO [(GLFW.Joystick, Text)]
 getJoystickNames = catMaybes `fmap` mapM getJoystick joysticks
   where
     getJoystick js =
-      fmap (maybe Nothing (\name -> Just (js, name))) (GLFW.getJoystickName js)
+      fmap (maybe Nothing (\name -> Just (js, cs name))) (GLFW.getJoystickName js)
 
 --------------------------------------------------------------------------------
-printEvent :: String -> [String] -> IO ()
-printEvent cbname fields = putStrLn (cbname ++ ": " ++ unwords fields)
+printEvent :: Text -> [Text] -> IO ()
+printEvent cbname fields = putText (cbname <> ": " <> unwords fields)
 
-showModifierKeys :: GLFW.ModifierKeys -> String
-showModifierKeys mk = "[mod keys: " ++ keys ++ "]"
+showModifierKeys :: GLFW.ModifierKeys -> Text
+showModifierKeys mk = "[mod keys: " <> keys <> "]"
   where
     keys =
       if null xs

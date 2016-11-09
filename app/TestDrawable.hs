@@ -14,10 +14,8 @@ import           Control.Concurrent
 import qualified Data.Vector.Storable as VS
 import           "gl" Graphics.GL
 import           Graphics.UI.GLFW     as GLFW
-import           Prelude              hiding (init)
-import           Protolude
+import           Protolude hiding (State)
 
---
 import Drawable
 import Drawable.Frame
 import Drawable.Screen
@@ -71,7 +69,7 @@ debugRenderer env state (fvaid, fbid, svaid, sbid, lvaid, lbid) = do
            ])
       win = envWindow env
       colorUniformLocation = envColorUniformLocation env
-  putStrLn ("Vertex Array Id: " ++ show svaid)
+  putText ("Vertex Array Id: " <> show svaid)
   justDrawThis
     win
     colorUniformLocation
