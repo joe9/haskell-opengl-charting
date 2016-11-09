@@ -4,15 +4,14 @@
 module TestData where
 
 import           Control.Monad
+import qualified Data.HashMap.Strict   as HashMap
 import           Data.Int
+import           Data.List
 import           Data.Time.Clock.POSIX
-import qualified Data.Vector.Unboxed   as VU
-import           Prelude
 import           Protolude
 import           System.Random
 
---
-import Types
+import PriceData
 
 -- data MyData =
 --   MyData {mdId     :: Int
@@ -25,9 +24,9 @@ import Types
 -- if the data type becomes more complicated and I need to derive an
 -- Unbox instance
 -- http://stackoverflow.com/questions/22882228/how-to-store-a-haskell-data-type-in-an-unboxed-vector-in-continuous-memory
-staticDataSeries :: VU.Vector PriceData
+staticDataSeries :: HashMap.HashMap AsOf PriceData
 staticDataSeries =
-  VU.fromList
+  (HashMap.fromList . fmap (\(b, a, v, as) -> (as, PriceData as b a v)))
     [ (1.19, 1.26, 1000, 1474308005)
     , (1.22, 1.27, 2000, 1474308015)
     , (1.27, 1.37, 1000, 1474308020)
@@ -40,18 +39,21 @@ staticDataSeries =
     , (1.1, 1.15, 6000, 1474308027)
     ]
 
-buildDataSeries :: IO (VU.Vector PriceData)
+buildDataSeries :: IO (HashMap.HashMap AsOf PriceData)
 buildDataSeries
 -- with 10000 elements, cairo and gloss take 16 seconds to render
 --                      OpenGL is taking around 10 seconds to render
 -- with 1000 elements, cairo and gloss are instantaneous
  = do
   let numberOfElements = 10
-  bids <- VU.replicateM numberOfElements (randomRIO (1, 2))
-  asks <- VU.replicateM numberOfElements (randomRIO (2, 3))
-  volumes <- VU.replicateM numberOfElements (randomRIO (0, 1000000))
+  bids <- replicateM numberOfElements (randomRIO (1, 2))
+  asks <- replicateM numberOfElements (randomRIO (2, 3))
+  volumes <- replicateM numberOfElements (randomRIO (0, 1000000))
   asofs <-
-    VU.replicateM
+    replicateM
       numberOfElements
       (fmap ((fromIntegral :: Integer -> Int64) . round) getPOSIXTime)
-  return (VU.zip4 bids asks volumes asofs)
+  (return .
+   HashMap.fromList .
+   zipWith4 (\b a v as -> (as, PriceData as b a v)) bids asks volumes)
+    asofs

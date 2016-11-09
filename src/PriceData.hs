@@ -1,8 +1,9 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Types where
+module PriceData where
 
+import qualified Data.HashMap.Strict  as HashMap
 import           Data.Int
 import           Data.Tuple.Select
 import qualified Data.Vector.Storable as VS
@@ -28,23 +29,29 @@ type Volume = Double
 -- <joe9> ClaudiusMaximus: That is way cool.
 type AsOf = Int64
 
-type PriceData = (Bid, Ask, Volume, AsOf)
+-- TODO move PriceData to a module
+data PriceData = PriceData
+  { pAsOf   :: AsOf
+  , pBid    :: Bid
+  , pAsk    :: Ask
+  , pVolume :: Volume
+  } deriving (Eq, Show, Ord)
 
 type X = Double
 
 type Y = Double
 
 bid :: PriceData -> Bid
-bid = sel1
+bid = pBid
 
 ask :: PriceData -> Bid
-ask = sel2
+ask = pAsk
 
 volume :: PriceData -> Bid
-volume = sel3
+volume = pVolume
 
 asof :: PriceData -> AsOf
-asof = sel4
+asof = pAsOf
 
 --   -- https://hackage.haskell.org/package/colour-2.3.3
 --   -- https://hackage.haskell.org/package/prizm-0.3.1.2
@@ -61,3 +68,11 @@ v2ToVertex (V2 x y) = VS.fromList [realToFrac x, realToFrac y]
 
 rf :: Double -> Float
 rf = realToFrac
+
+latestAsOf :: HashMap.HashMap AsOf PriceData -> AsOf
+latestAsOf dataSeries
+  | null dataSeries = 0
+  | otherwise = maximum (HashMap.keys dataSeries)
+
+toSortedList :: HashMap.HashMap AsOf PriceData -> [(AsOf,PriceData)]
+toSortedList = sort . HashMap.toList

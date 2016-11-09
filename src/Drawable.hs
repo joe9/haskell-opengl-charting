@@ -10,7 +10,7 @@ import           Control.Monad.Trans.Cont
 import           Data.Colour
 import           Data.Int
 import           Data.IORef
-import qualified Data.Vector.Unboxed      as VU
+import qualified Data.HashMap.Strict      as HashMap
 import           "gl" Graphics.GL
 import           Graphics.UI.GLFW         as GLFW
 import           Protolude                hiding (State, ask)
@@ -18,7 +18,7 @@ import           Protolude                hiding (State, ask)
 import GLFWHelpers
 import OpenGLHelpers
 import Scale
-import Types
+import PriceData
 
 data Value
   = ValueCursorPosition Double
@@ -42,8 +42,8 @@ data DrawableType
 
 data Drawable = Drawable
   { dPreviousValue :: Maybe Value
-  , dCurrentValue :: State -> VU.Vector PriceData -> Value
-  , dLoadBufferAndBuildDrawFunction :: State -> VU.Vector PriceData -> Scale -> Scale -> Scale -> Drawable -> IO (IO ())
+  , dCurrentValue :: State -> HashMap.HashMap AsOf PriceData -> Value
+  , dLoadBufferAndBuildDrawFunction :: State -> HashMap.HashMap AsOf PriceData -> Scale -> Scale -> Scale -> Drawable -> IO (IO ())
   , dDraw :: IO ()
   , dVertexArrayId :: VertexArrayId
   , dBufferId :: BufferId
@@ -56,7 +56,7 @@ renderDrawables
   :: Env
   -> State
   -> [Drawable]
-  -> (VU.Vector PriceData, Scale, Scale, Scale)
+  -> (HashMap.HashMap AsOf PriceData, Scale, Scale, Scale)
   -> IO [Drawable]
 renderDrawables env state ds dataSeries@(series, _, _, _) = do
   let win = envWindow env
@@ -78,7 +78,7 @@ renderDrawable
   -> ColorUniformLocation
   -> State
   -> Drawable
-  -> (VU.Vector PriceData, Scale, Scale, Scale)
+  -> (HashMap.HashMap AsOf PriceData, Scale, Scale, Scale)
   -> IO Drawable
 renderDrawable win colorUniformLocation state drawable (series, xscale, pricescale, volumescale) = do
   let justDraw =

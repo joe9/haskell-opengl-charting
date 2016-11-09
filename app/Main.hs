@@ -34,7 +34,7 @@ import GLFWHelpers
 import OpenGLHelpers
 import Scale
 import TestData
-import Types
+import PriceData
 
 -- fonts can be added using freetype2 or FontyFruity. edwardk
 -- recommends using Valve approach of rendering it with a signed
@@ -85,7 +85,7 @@ main = do
 --   withGLFW
 --     (withInitializedWindow (\e s -> debugUsingSingleBuffer (debugRenderer e s)))
 run
-  :: IORef (VU.Vector PriceData, Scale, Scale, Scale)
+  :: IORef (HashMap.HashMap AsOf PriceData, Scale, Scale, Scale)
   -> Env
   -> State
   -> [Drawable]
@@ -121,8 +121,8 @@ processEvents env state = do
 -- the below is not a working solution. Use MVar or TVar or IORef as
 -- recommended in the SO answer above
 updatedData
-  :: IORef (VU.Vector PriceData, Scale, Scale, Scale)
-  -> (VU.Vector PriceData, Scale, Scale, Scale)
+  :: IORef (HashMap.HashMap AsOf PriceData, Scale, Scale, Scale)
+  -> (HashMap.HashMap AsOf PriceData, Scale, Scale, Scale)
   -> IO b
 updatedData ref oldData = do
   newSeries <- addAnother oldData
@@ -132,8 +132,8 @@ updatedData ref oldData = do
   updatedData ref newSeries
 
 addAnother
-  :: (VU.Vector PriceData, Scale, Scale, Scale)
-  -> IO (VU.Vector PriceData, Scale, Scale, Scale)
+  :: (HashMap.HashMap AsOf PriceData, Scale, Scale, Scale)
+  -> IO (HashMap.HashMap AsOf PriceData, Scale, Scale, Scale)
 addAnother (series, xscale, pricescale, volumescale) = do
   b <- randomRIO (1, 2)
   a <- randomRIO (2, 3)

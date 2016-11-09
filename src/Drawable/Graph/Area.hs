@@ -26,7 +26,7 @@ loadAndDrawFunction
   :: ((Int, PriceData) -> Double)
   -> ((Int, PriceData) -> Double)
   -> ((Int, PriceData) -> Double)
-  -> (State -> VU.Vector PriceData -> Scale -> Scale -> Scale -> Drawable -> IO (IO ()))
+  -> (State -> HashMap.HashMap AsOf PriceData -> Scale -> Scale -> Scale -> Drawable -> IO (IO ()))
 loadAndDrawFunction fx fy1 fy2 =
   \_ dataSeries scalex scaleprice _ d -> do
     let vertices = priceBufferData scalex (scaleprice fx fy1 fy2) dataSeries
@@ -54,7 +54,7 @@ areaDrawable vaId bId =
 -- TODO dots
 --   Pictures ([areaBetweenBidAndAsk areaVertices] <> map dot scaledBids <>
 --             map dot scaledAsks)
-priceGraph :: Scale -> Scale -> VU.Vector PriceData -> Picture
+priceGraph :: Scale -> Scale -> HashMap.HashMap AsOf PriceData -> Picture
 priceGraph scalex scaley dataSeries =
   Picture scaledPrices GL_TRIANGLE_STRIP lightpink Nothing
   where
@@ -62,7 +62,7 @@ priceGraph scalex scaley dataSeries =
       (VU.convert . VU.concatMap (scaledPrice scalex scaley) . VU.indexed)
         dataSeries
 
-priceBufferData :: Scale -> Scale -> VU.Vector PriceData -> VS.Vector Float
+priceBufferData :: Scale -> Scale -> HashMap.HashMap AsOf PriceData -> VS.Vector Float
 priceBufferData scalex scaley =
   VU.convert . VU.concatMap (scaledPrice scalex scaley) . VU.indexed
 

@@ -5,8 +5,8 @@
 module Drawable.Frame where
 
 import           Data.Colour.Names
+import qualified Data.HashMap.Strict  as HashMap
 import qualified Data.Vector.Storable as VS
-import qualified Data.Vector.Unboxed  as VU
 import           "gl" Graphics.GL
 import           Protolude            hiding (State)
 
@@ -14,11 +14,11 @@ import Drawable
 import GLFWHelpers
 import OpenGLHelpers
 import Scale
-import Types
+import PriceData
 
 drawFrameFunction
   :: State
-  -> VU.Vector PriceData
+  -> HashMap.HashMap AsOf PriceData
   -> Scale
   -> Scale
   -> Scale

@@ -7,15 +7,15 @@ module Drawable.PriceAreaGraph
   ) where
 
 import           Data.Colour.Names
+import qualified Data.HashMap.Strict  as HashMap
 import qualified Data.Vector.Storable as VS
-import qualified Data.Vector.Unboxed  as VU
 import           "gl" Graphics.GL
 import           Protolude            hiding (ask)
 
 import Drawable
 import OpenGLHelpers
 import Scale
-import Types
+import PriceData
 
 priceChartDrawable :: VertexArrayId -> BufferId -> Drawable
 priceChartDrawable vaId bId =
@@ -31,7 +31,7 @@ priceChartDrawable vaId bId =
              0
              (div (fromIntegral (VS.length vertices)) 2))
   , dPreviousValue = Nothing
-  , dCurrentValue = \_ -> ValueAsOf . asof . VU.last
+  , dCurrentValue = \_ -> ValueAsOf . latestAsOf
   , dVertexArrayId = vaId
   , dBufferId = bId
   , dColour = lightpink
@@ -42,17 +42,20 @@ priceChartDrawable vaId bId =
 -- TODO dots
 --   Pictures ([areaBetweenBidAndAsk areaVertices] <> map dot scaledBids <>
 --             map dot scaledAsks)
-priceGraph :: Scale -> Scale -> VU.Vector PriceData -> Picture
+priceGraph :: Scale -> Scale -> HashMap.HashMap AsOf PriceData -> Picture
 priceGraph scalex scaley dataSeries =
-  Picture scaledPrices GL_TRIANGLE_STRIP lightpink Nothing
-  where
-    scaledPrices =
-      (VU.convert . VU.concatMap (scaledPrice scalex scaley) . VU.indexed)
-        dataSeries
+  Picture
+    (priceBufferData scalex scaley dataSeries)
+    GL_TRIANGLE_STRIP
+    lightpink
+    Nothing
 
-priceBufferData :: Scale -> Scale -> VU.Vector PriceData -> VS.Vector Float
+priceBufferData :: Scale
+                -> Scale
+                -> HashMap.HashMap AsOf PriceData
+                -> VS.Vector Float
 priceBufferData scalex scaley =
-  VU.convert . VU.concatMap (scaledPrice scalex scaley) . VU.indexed
+  VS.fromList . concatMap (scaledPrice scalex scaley) . toSortedList
 
 -- scaledPriceOld
 --   :: (Scale x
@@ -68,14 +71,13 @@ priceBufferData scalex scaley =
 --         a = ask d
 --   where scaledPrices = (VS.concatMap v2ToVertex . VU.convert . VU.concatMap (scaledPriceOld xScale yScale) . VU.indexed) dataSeries
 -- Scale from the domain (input data range) to the range (absolute coordinate).
-scaledPrice :: Scale -> Scale -> (Int, PriceData) -> VU.Vector Float
+scaledPrice :: Scale -> Scale -> (AsOf, PriceData) -> [Float]
 scaledPrice scalex scaley (x, d) =
-  VU.fromList
-    [ (realToFrac . sToRange scalex scalex . fromIntegral) x
-    , (realToFrac . (sToRange scaley) scaley) b
-    , (realToFrac . sToRange scalex scalex . fromIntegral) x
-    , (realToFrac . (sToRange scaley) scaley) a
-    ]
+  [ (realToFrac . sToRange scalex scalex . fromIntegral) x
+  , (realToFrac . (sToRange scaley) scaley) b
+  , (realToFrac . sToRange scalex scalex . fromIntegral) x
+  , (realToFrac . (sToRange scaley) scaley) a
+  ]
   where
     b = bid d
     a = ask d

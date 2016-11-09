@@ -5,8 +5,8 @@
 module Chart where
 
 import           Data.Colour.Names
+import qualified Data.HashMap.Strict  as HashMap
 import qualified Data.Vector.Storable as VS
-import qualified Data.Vector.Unboxed  as VU
 import           "gl" Graphics.GL
 import           Protolude            hiding (ask)
 
@@ -15,10 +15,8 @@ import GLFWHelpers
 import OpenGLHelpers
 import Scale
 import TestData
-import Types
+import PriceData
 
--- import PriceGraphOpenGL
--- import VolumeGraphOpenGL
 minimumElement, maximumElement
   :: (Ord a, VU.Unbox b)
   => (b -> a) -> VU.Vector b -> a
@@ -26,18 +24,20 @@ minimumElement f = f . VU.minimumBy (\a b -> compare (f a) (f b))
 
 maximumElement f = f . VU.maximumBy (\a b -> compare (f a) (f b))
 
-xScale, priceScale, volumeScale :: VU.Vector PriceData -> Scale
+xScale, priceScale, volumeScale :: HashMap.HashMap AsOf PriceData -> Scale
 xScale dataSeries =
   linearScale
-    0
-    (fromIntegral (VU.length dataSeries - 1))
+    ((minimum . HashMap.elems . HashMap.map pAsOf) dataSeries)
+    ((maximum . HashMap.elems . HashMap.map pAsOf) dataSeries)
     (-1 + margin)
     (1 - margin)
 
 priceScale dataSeries =
   linearScale
-    (min (minimumElement bid dataSeries) (minimumElement ask dataSeries))
-    (max (maximumElement bid dataSeries) (maximumElement ask dataSeries))
+    (min ((minimum . HashMap.elems . HashMap.map pBid) dataSeries)
+          (minimum . HashMap.elems . HashMap.map pAsk) dataSeries)
+    (max ((maximum . HashMap.elems . HashMap.map pBid) dataSeries)
+          (maximum . HashMap.elems . HashMap.map pAsk) dataSeries)
     (-1 + margin + volumeChartHeight 2)
     (-1 + margin + volumeChartHeight 2 + priceChartHeight 2)
 
@@ -54,7 +54,7 @@ volumeScale dataSeries =
 --       => xscale
 --       -> priceScale
 --       -> volumeScale
---       -> VU.Vector PriceData
+--       -> HashMap.HashMap AsOf PriceData
 --       -> [Picture]
 -- chart x p v dataSeries =
 --   [ -- frame

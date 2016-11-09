@@ -7,36 +7,40 @@ module Drawable.VolumeBarGraph
   ) where
 
 import           Data.Colour.Names
+import qualified Data.HashMap.Strict  as HashMap
 import qualified Data.Vector.Storable as VS
-import qualified Data.Vector.Unboxed  as VU
 import           "gl" Graphics.GL
 import           Linear.V2
 import           Protolude
 
---
 import Drawable
 import OpenGLHelpers
 import Scale
-import Types
+import PriceData
 
 -- TODO            map dot scaledVolumes)
-volumeBufferData :: Scale -> Scale -> VU.Vector PriceData -> VS.Vector Float
+volumeBufferData :: Scale
+                 -> Scale
+                 -> HashMap.HashMap AsOf PriceData
+                 -> VS.Vector Float
 volumeBufferData xScale yScale dataSeries =
-  ((VS.concatMap v2ToVertex .
-    VU.convert .
-    VU.concatMap
-      (\(V2 x y) ->
-         VU.fromList
-           [ V2 (x - barWidthHalved) (sMinRange yScale)
-           , V2 (x - barWidthHalved) y
-           , V2 (x + barWidthHalved) (sMinRange yScale)
-           , V2 (x + barWidthHalved) y
-           ]) .
-    VU.imap (scaledVertex xScale yScale))
-     dataSeries)
+  (VS.fromList .
+   concatMap
+     (\(x, y) ->
+        [ realToFrac (x - barWidthHalved)
+        , realToFrac (sMinRange yScale)
+        , realToFrac (x - barWidthHalved)
+        , realToFrac y
+        , realToFrac (x + barWidthHalved)
+        , realToFrac (sMinRange yScale)
+        , realToFrac (x + barWidthHalved)
+        , realToFrac y
+        ]) .
+   fmap (scaledVertex xScale yScale) . toSortedList)
+    dataSeries
   where
     chartWidth = sMaxRange xScale - sMinRange xScale
-    barWidthHalved = (barWidth chartWidth (VU.length dataSeries)) / 2
+    barWidthHalved = (barWidth chartWidth (HashMap.size dataSeries)) / 2
 
 type NumberOfEntries = Int
 
@@ -44,10 +48,10 @@ barWidth :: Double -> NumberOfEntries -> Double
 barWidth chartWidth n = chartWidth / (fromIntegral n)
 
 -- Scale from the domain (input data range) to the range (absolute coordinate).
-scaledVertex :: Scale -> Scale -> Int -> PriceData -> (V2 Double)
-scaledVertex xScale yScale x =
-  V2 (((sToRange xScale) xScale . fromIntegral) x) .
-  (sToRange yScale) yScale . volume
+scaledVertex :: Scale -> Scale -> (AsOf, PriceData) -> (Double, Double)
+scaledVertex xScale yScale (x, p) =
+  ( ((sToRange xScale) xScale . fromIntegral) x
+  , ((sToRange yScale) yScale . volume) p)
 
 volumeChartDrawable :: VertexArrayId -> BufferId -> Drawable
 volumeChartDrawable vaId bId =
@@ -63,7 +67,7 @@ volumeChartDrawable vaId bId =
                 0
                 (div (fromIntegral (VS.length vertices)) 2))
   , dPreviousValue = Nothing
-  , dCurrentValue = \_ -> ValueAsOf . asof . VU.last
+  , dCurrentValue = \_ -> ValueAsOf . latestAsOf
   , dVertexArrayId = vaId
   , dBufferId = bId
   , dColour = lightgrey
