@@ -1,3 +1,6 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+
 module Types where
 
 import Data.Tuple.Select
@@ -5,7 +8,6 @@ import Data.Int
 import qualified Data.Vector.Storable as VS
 import Linear.V2
 
---
 type Height = Double
 
 type Width = Double

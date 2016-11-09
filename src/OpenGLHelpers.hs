@@ -1,4 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoImplicitPrelude #-}
+
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports    #-}
 
 module OpenGLHelpers where

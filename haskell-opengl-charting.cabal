@@ -45,7 +45,11 @@ library
                      , linear
                      , time
                      , random
+                     , unordered-containers
+                     , protolude
   default-language:    Haskell2010
+  default-extensions:  NoImplicitPrelude
+  other-extensions:    OverloadedStrings
 
 -- executable baby-steps-to-building-a-realtime-chart-with-haskell-exe
 --   hs-source-dirs:      app
@@ -99,7 +103,10 @@ executable Chart
                      , pretty
                      , tuple
                      , time
+                     , unordered-containers
+                     , protolude
   default-language:    Haskell2010
+  default-extensions:  NoImplicitPrelude
   other-extensions:    DeriveDataTypeable
                      , FlexibleContexts
                      , TemplateHaskell
@@ -146,6 +153,8 @@ executable TestDrawable
                      , pretty
                      , tuple
                      , time
+                     , unordered-containers
+                     , protolude
   default-language:    Haskell2010
   other-extensions:    DeriveDataTypeable
                      , FlexibleContexts
@@ -168,6 +177,7 @@ executable TestGLFW
                      , pretty
                      , bindings-GLFW >= 3.2.1.0
   default-language:    Haskell2010
+  default-extensions:  NoImplicitPrelude
 
 -- test-suite baby-steps-to-building-a-realtime-chart-with-haskell-test
 --   type:                exitcode-stdio-1.0
